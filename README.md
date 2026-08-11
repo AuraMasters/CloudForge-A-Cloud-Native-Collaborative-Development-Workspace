@@ -75,3 +75,39 @@ Previous research has addressed important individual components of cloud-based s
 ### Overall Research Gap
 
 The primary research gap is the **lack of a unified, lightweight cloud-native development environment that combines collaborative browser-based coding with isolated container execution and supporting cloud services in a single workflow**. CloudForge addresses this gap by integrating real-time collaboration, Docker-based workspaces, Git, cloud terminal access, live preview, resource monitoring, persistent storage, and scalable cloud infrastructure into one development platform.
+
+## 7. Implementation Order
+| Phase        | Module                            | Description                                                                                                           |
+| ------------ | --------------------------------- | --------------------------------------------------------------------------------------------------------------------- |
+| **Phase 1**  | **React + Node.js + MongoDB**     | Set up the frontend, backend APIs, authentication, database, and basic application architecture.                      |
+| **Phase 2**  | **Project Management**            | Implement project creation, workspace management, users, permissions, and project settings.                           |
+| **Phase 3**  | **Docker Workspace**              | Create isolated Docker-based development environments for each project.                                               |
+| **Phase 4**  | **Cloud Terminal**                | Provide an interactive terminal connected to the user's Docker workspace.                                             |
+| **Phase 5**  | **Browser IDE**                   | Build a web-based code editor with file management and workspace integration.                                         |
+| **Phase 6**  | **Git Integration**               | Add Git repository connection, clone, commit, push, pull, branch, and version-control operations.                     |
+| **Phase 7**  | **WebSocket Collaboration**       | Enable real-time communication and collaborative workspace features using WebSockets.                                 |
+| **Phase 8**  | **Live Preview**                  | Run applications inside isolated containers and expose their live output through the browser.                         |
+| **Phase 9**  | **Resource Monitoring**           | Monitor CPU, memory, storage, container health, and workspace resource usage.                                         |
+| **Phase 10** | **Redis + Message Queue**         | Introduce Redis for caching, sessions, coordination, and message queues for asynchronous workloads.                   |
+| **Phase 11** | **Persistent/Object Storage**     | Add persistent storage for project files, build artifacts, logs, and other workspace data.                            |
+| **Phase 12** | **Kubernetes**                    | Migrate workspace orchestration from standalone Docker containers to Kubernetes-managed workloads.                    |
+| **Phase 13** | **Auto Scaling + Load Balancing** | Implement automatic resource scaling and load balancing to support multiple concurrent users.                         |
+| **Phase 14** | **Monitoring + CI/CD**            | Integrate centralized monitoring, logging, metrics, automated testing, and CI/CD pipelines for production deployment. |
+
+## 8. Methodology
+
+CloudForge follows a systematic development methodology from requirement analysis to testing and evaluation.
+
+| Step | Methodology                     | Description                                                                                                   |
+| ---- | ------------------------------- | ------------------------------------------------------------------------------------------------------------- |
+| 1    | Requirement Analysis            | Identify development, collaboration, execution, and cloud infrastructure requirements.                        |
+| 2    | System Design                   | Design the frontend, backend, database, workspace, networking, and cloud architecture.                        |
+| 3    | Workspace Provisioning          | Create isolated Docker-based workspaces for individual projects.                                              |
+| 4    | Development Environment Setup   | Configure the editor, file system, runtime, dependencies, and terminal inside the workspace.                  |
+| 5    | Collaboration & Version Control | Implement real-time collaboration using WebSockets and project management using Git.                          |
+| 6    | Code Execution & Live Preview   | Execute applications inside isolated workspaces and provide browser-based live previews.                      |
+| 7    | Resource Monitoring             | Monitor CPU, memory, storage, and workspace activity for efficient resource usage.                            |
+| 8    | Scaling & Cloud Integration     | Integrate Kubernetes, persistent storage, caching, asynchronous processing, load balancing, and auto-scaling. |
+| 9    | Testing & Evaluation            | Evaluate functionality, isolation, collaboration, performance, scalability, and reliability.                  |
+
+![Project Methodology](methodology.png)
