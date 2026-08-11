@@ -1,6 +1,7 @@
 import { useEffect, useState } from "react";
 import { useNavigate } from "react-router-dom";
 import { useAlert } from "../hooks/useAlert";
+import API_URL from "../config/api";
 
 interface User {
   name: string;
@@ -17,7 +18,7 @@ function Dashboard() {
   useEffect(() => {
     const getUser = async () => {
       try {
-        const response = await fetch("http://localhost:5000/api/auth/me", {
+        const response = await fetch(`${API_URL}/api/auth/me`, {
           credentials: "include",
         });
 
@@ -42,7 +43,7 @@ function Dashboard() {
 
   const handleLogout = async () => {
     try {
-      await fetch("http://localhost:5000/api/auth/logout", {
+      await fetch(`${API_URL}/api/auth/logout`, {
         method: "POST",
         credentials: "include",
       });
