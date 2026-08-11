@@ -85,7 +85,7 @@ export const updateProject = async (req, res) => {
         language,
       },
       {
-        new: true,
+        returnDocument: "after",
         runValidators: true,
       }
     );
@@ -126,8 +126,7 @@ export const deleteProject = async (req, res) => {
     });
   } catch (error) {
     res.status(500).json({
-      message: "Failed to delete project",
-      error: error.message,
+      message: "Project deleted successfully",
     });
   }
 };
