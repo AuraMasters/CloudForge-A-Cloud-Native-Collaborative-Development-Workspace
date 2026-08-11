@@ -1,6 +1,9 @@
 import { Link } from "react-router-dom";
+import { useAlert } from "../hooks/useAlert";
 
 function Home() {
+  const { showSuccess } = useAlert();
+
   return (
     <div className="flex flex-col min-h-screen bg-slate-50 text-slate-900 font-sans selection:bg-blue-200">
       <nav className="flex-none h-16 px-6 lg:px-8 border-b border-slate-200 bg-white/80 backdrop-blur-md flex items-center justify-between sticky top-0 z-50">
@@ -29,7 +32,10 @@ function Home() {
         <div className="absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 w-[600px] h-[400px] bg-blue-400/20 blur-[120px] rounded-full pointer-events-none"></div>
 
         <div className="max-w-3xl text-center relative z-10">
-          <div className="inline-flex items-center px-4 py-1.5 mb-8 rounded-full bg-blue-50 border border-blue-200 text-blue-700 text-xs font-bold tracking-wide uppercase shadow-sm">
+          <div 
+            onClick={() => showSuccess("Welcome to CloudForge!")}
+            className="inline-flex cursor-pointer items-center px-4 py-1.5 mb-8 rounded-full bg-blue-50 border border-blue-200 text-blue-700 text-xs font-bold tracking-wide uppercase shadow-sm hover:bg-blue-100 transition-colors"
+          >
             Cloud-Native Development Platform
           </div>
 

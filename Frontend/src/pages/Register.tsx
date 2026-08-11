@@ -1,5 +1,6 @@
 import { useState, type ChangeEvent, type FormEvent } from "react";
 import { Link, useNavigate } from "react-router-dom";
+import { useAlert } from "../hooks/useAlert";
 
 interface FormData {
   name: string;
@@ -9,6 +10,7 @@ interface FormData {
 
 function Register() {
   const navigate = useNavigate();
+  const { showError, showSuccess } = useAlert();
 
   const [form, setForm] = useState<FormData>({
     name: "",
@@ -16,7 +18,6 @@ function Register() {
     password: "",
   });
 
-  const [error, setError] = useState<string>("");
   const [loading, setLoading] = useState<boolean>(false);
 
   const handleChange = (e: ChangeEvent<HTMLInputElement>) => {
@@ -28,8 +29,6 @@ function Register() {
 
   const handleSubmit = async (e: FormEvent<HTMLFormElement>) => {
     e.preventDefault();
-
-    setError("");
     setLoading(true);
 
     try {
@@ -48,12 +47,13 @@ function Register() {
         throw new Error(data.message);
       }
 
+      showSuccess("Account created successfully");
       navigate("/dashboard");
     } catch (error) {
       if (error instanceof Error) {
-        setError(error.message);
+        showError(error.message);
       } else {
-        setError("An unknown error occurred");
+        showError("An unknown error occurred during registration");
       }
     } finally {
       setLoading(false);
@@ -78,12 +78,6 @@ function Register() {
           <p className="text-slate-500 mt-2 mb-6">
             Create your CloudForge account.
           </p>
-
-          {error && (
-            <div className="mb-5 p-3 rounded-lg bg-red-50 border border-red-200 text-red-600 text-sm font-medium">
-              {error}
-            </div>
-          )}
 
           <form onSubmit={handleSubmit} className="space-y-5">
             <div>

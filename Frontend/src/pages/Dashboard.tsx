@@ -1,5 +1,6 @@
 import { useEffect, useState } from "react";
 import { useNavigate } from "react-router-dom";
+import { useAlert } from "../hooks/useAlert";
 
 interface User {
   name: string;
@@ -8,6 +9,7 @@ interface User {
 
 function Dashboard() {
   const navigate = useNavigate();
+  const { showError, showSuccess } = useAlert();
 
   const [user, setUser] = useState<User | null>(null);
   const [loading, setLoading] = useState<boolean>(true);
@@ -20,13 +22,15 @@ function Dashboard() {
         });
 
         if (!response.ok) {
+          showError("Please sign in to access the dashboard.");
           navigate("/login");
           return;
         }
 
         const data = await response.json();
         setUser(data.user);
-      } catch {
+      } catch (error) {
+        showError("Session expired. Please sign in again.");
         navigate("/login");
       } finally {
         setLoading(false);
@@ -34,7 +38,7 @@ function Dashboard() {
     };
 
     getUser();
-  }, [navigate]);
+  }, [navigate, showError]);
 
   const handleLogout = async () => {
     try {
@@ -42,9 +46,10 @@ function Dashboard() {
         method: "POST",
         credentials: "include",
       });
+      showSuccess("Successfully signed out");
       navigate("/login");
     } catch (error) {
-      console.error(error);
+      showError("Failed to sign out. Please try again.");
     }
   };
 

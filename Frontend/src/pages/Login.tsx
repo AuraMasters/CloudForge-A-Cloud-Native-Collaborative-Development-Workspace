@@ -1,5 +1,6 @@
 import { useState, type ChangeEvent, type FormEvent } from "react";
 import { Link, useNavigate } from "react-router-dom";
+import { useAlert } from "../hooks/useAlert"; 
 
 interface FormData {
   email: string;
@@ -8,13 +9,13 @@ interface FormData {
 
 function Login() {
   const navigate = useNavigate();
+  const { showError, showSuccess } = useAlert();
 
   const [form, setForm] = useState<FormData>({
     email: "",
     password: "",
   });
 
-  const [error, setError] = useState<string>("");
   const [loading, setLoading] = useState<boolean>(false);
 
   const handleChange = (e: ChangeEvent<HTMLInputElement>) => {
@@ -26,8 +27,6 @@ function Login() {
 
   const handleSubmit = async (e: FormEvent<HTMLFormElement>) => {
     e.preventDefault();
-
-    setError("");
     setLoading(true);
 
     try {
@@ -46,12 +45,13 @@ function Login() {
         throw new Error(data.message);
       }
 
+      showSuccess("Successfully signed in");
       navigate("/dashboard");
     } catch (error) {
       if (error instanceof Error) {
-        setError(error.message);
+        showError(error.message);
       } else {
-        setError("An unknown error occurred");
+        showError("An unknown error occurred while signing in");
       }
     } finally {
       setLoading(false);
@@ -76,12 +76,6 @@ function Login() {
           <p className="text-slate-500 mt-2 mb-6">
             Sign in to your CloudForge account.
           </p>
-
-          {error && (
-            <div className="mb-5 p-3 rounded-lg bg-red-50 border border-red-200 text-red-600 text-sm font-medium">
-              {error}
-            </div>
-          )}
 
           <form onSubmit={handleSubmit} className="space-y-5">
             <div>
