@@ -108,7 +108,6 @@ function ProjectView() {
 
         <div className="grid lg:grid-cols-3 gap-6">
           <div className="lg:col-span-2 space-y-6">
-            {/* Editor / Code View Placeholder */}
             <div className="bg-white border border-slate-200 rounded-2xl p-6 min-h-[400px] flex flex-col items-center justify-center text-center">
               <div className="w-16 h-16 bg-slate-50 text-slate-400 rounded-2xl flex items-center justify-center mb-4 border border-slate-100">
                 {'{ }'}
