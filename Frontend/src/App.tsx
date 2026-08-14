@@ -7,6 +7,7 @@ import Dashboard from "./pages/Dashboard";
 import NotFound from "./pages/NotFound";
 import Projects from "./pages/Project";
 import ProjectView from "./pages/ProjectView";
+import GitHub from "./pages/Github";
 
 function App() {
   return (
@@ -18,6 +19,7 @@ function App() {
         <Route path="/dashboard" element={<Dashboard />} />
         <Route path="/projects" element={<Projects />} />
         <Route path="/projects/:id" element={<ProjectView />} />
+        <Route path="/github" element={<GitHub />}/>
 
         <Route path="*" element={<NotFound />} />
       </Routes>

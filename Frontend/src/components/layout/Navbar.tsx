@@ -1,4 +1,5 @@
 import { useNavigate } from "react-router-dom";
+import { SiGithub } from "react-icons/si";
 import { useAlert } from "../../hooks/useAlert";
 import API_URL from "../../config/api";
 
@@ -36,7 +37,17 @@ function Navbar({ user }: NavbarProps) {
         Cloud<span className="text-blue-600 font-bold">Forge</span>
       </button>
 
-      <div className="flex items-center gap-4">
+      <div className="flex items-center gap-3">
+        <button
+          onClick={() => navigate("/github")}
+          className="flex items-center gap-2 px-3 py-2 text-sm font-medium rounded-lg border border-slate-300 bg-white text-slate-700 hover:bg-slate-50 hover:text-slate-900 transition-all"
+        >
+          <SiGithub className="w-4 h-4" />
+          <span className="hidden sm:inline">
+            GitHub
+          </span>
+        </button>
+
         <div className="hidden sm:block text-right">
           <p className="text-sm font-semibold text-slate-800">
             {user?.name || "User"}
