@@ -4,8 +4,10 @@ import cors from "cors";
 import cookieParser from "cookie-parser";
 
 import connectDB from "./config/db.js";
+
 import authRoutes from "./routes/authRoutes.js";
 import projectRoutes from "./routes/projectRoutes.js";
+import githubRoutes from "./routes/githubRoutes.js";
 
 dotenv.config();
 
@@ -28,7 +30,10 @@ app.get("/", (req, res) => {
 });
 
 app.use("/api/auth", authRoutes);
+
 app.use("/api/projects", projectRoutes);
+
+app.use("/api/github", githubRoutes);
 
 const PORT = process.env.PORT || 5000;
 
@@ -36,10 +41,13 @@ const startServer = async () => {
   const connected = await connectDB();
 
   if (!connected) {
-    console.log("Server not started because MongoDB connection failed");
+    console.log(
+      "Server not started because MongoDB connection failed"
+    );
+
     process.exit(1);
   }
-  
+
   app.listen(PORT, () => {
     console.log(`Server running on port ${PORT}`);
   });
