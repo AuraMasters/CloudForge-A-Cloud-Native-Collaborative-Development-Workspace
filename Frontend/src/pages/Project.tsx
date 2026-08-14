@@ -8,6 +8,7 @@ import EmptyState from "../components/ui/EmptyState";
 import ProjectGrid from "../components/projects/ProjectGrid";
 import CreateProjectModal from "../components/projects/CreateProjectModal";
 import EditProjectModal from "../components/projects/EditProjectModal";
+import GitHubRepositoryModal from "../components/projects/GitHubRepositoryModal";
 import { type Project } from "../types/project";
 
 interface User {
@@ -24,6 +25,7 @@ function Projects() {
   const [search, setSearch] = useState("");
   const [showCreate, setShowCreate] = useState(false);
   const [editingProject, setEditingProject] = useState<Project | null>(null);
+  const [showGitHubImport, setShowGitHubImport] = useState(false);
 
   useEffect(() => {
     const loadProjects = async () => {
@@ -60,6 +62,22 @@ function Projects() {
 
   const handleProjectCreated = (project: Project) => {
     setProjects((prev) => [project, ...prev]);
+  };
+
+  const handleProjectImported = (project: Project) => {
+    setProjects((prev) => {
+      const exists = prev.some(
+        (item) => item._id === project._id
+      );
+
+      if (exists) {
+        return prev.map((item) =>
+          item._id === project._id ? project : item
+        );
+      }
+
+      return [project, ...prev];
+    });
   };
 
   const handleProjectUpdated = (updatedProject: Project) => {
@@ -107,9 +125,21 @@ function Projects() {
               <h1 className="text-3xl lg:text-4xl font-bold tracking-tight">Projects</h1>
               <p className="text-slate-500 mt-2">Create, manage and organize your development projects.</p>
             </div>
-            <button onClick={() => setShowCreate(true)} className="px-5 py-3 bg-blue-600 text-white rounded-xl font-semibold hover:bg-blue-700 transition-colors shadow-sm">
-              + New Project
-            </button>
+            <div className="flex flex-col sm:flex-row gap-3">
+              <button
+                onClick={() => setShowGitHubImport(true)}
+                className="px-5 py-3 bg-white border border-slate-300 text-slate-700 rounded-xl font-semibold hover:bg-slate-50 transition-colors shadow-sm"
+              >
+                Import from GitHub
+              </button>
+
+              <button
+                onClick={() => setShowCreate(true)}
+                className="px-5 py-3 bg-blue-600 text-white rounded-xl font-semibold hover:bg-blue-700 transition-colors shadow-sm"
+              >
+                + New Project
+              </button>
+            </div>
           </div>
         </section>
 
@@ -146,6 +176,11 @@ function Projects() {
 
       <CreateProjectModal isOpen={showCreate} onClose={() => setShowCreate(false)} onCreated={handleProjectCreated} />
       <EditProjectModal project={editingProject} onClose={() => setEditingProject(null)} onUpdated={handleProjectUpdated} />
+      <GitHubRepositoryModal
+        isOpen={showGitHubImport}
+        onClose={() => setShowGitHubImport(false)}
+        onImported={handleProjectImported}
+      />
     </div>
   );
 }

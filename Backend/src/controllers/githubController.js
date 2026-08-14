@@ -10,10 +10,8 @@ import {
   getRepository,
 } from "../services/githubService.js";
 
-/**
- * Start GitHub OAuth
- * GET /api/github/connect
- */
+import Project from "../models/Project.js";
+
 export const connectGitHub = async (req, res) => {
   try {
     const nonce = crypto.randomBytes(32).toString("hex");
@@ -194,10 +192,6 @@ export const getGitHubStatus = async (req, res) => {
   }
 };
 
-/**
- * Get connected user's GitHub repositories
- * GET /api/github/repos
- */
 export const getGitHubRepositories = async (req, res) => {
   try {
     const connection =
@@ -215,8 +209,52 @@ export const getGitHubRepositories = async (req, res) => {
       connection.accessToken
     );
 
+    const projects = await Project.find({
+      owner: req.user._id,
+      "source.type": "github",
+    }).select("source.github.repositoryId");
+
+    const importedProjects = new Map();
+
+    projects.forEach((project) => {
+      const repositoryId =
+        project.source?.github?.repositoryId;
+
+      if (repositoryId) {
+        importedProjects.set(
+          String(repositoryId),
+          String(project._id)
+        );
+      }
+    });
+
+    const formattedRepositories = repositories.map(
+      (repository) => {
+        const repositoryId = String(repository.id);
+
+        const projectId =
+          importedProjects.get(repositoryId);
+
+        return {
+          id: repositoryId,
+          name: repository.name,
+          fullName: repository.full_name,
+          description: repository.description || "",
+          language: repository.language || "Unknown",
+          private: repository.private,
+          owner: repository.owner.login,
+          defaultBranch:
+            repository.default_branch || "main",
+          url: repository.html_url,
+          cloneUrl: repository.clone_url,
+          alreadyImported: Boolean(projectId),
+          projectId: projectId || null,
+        };
+      }
+    );
+
     return res.json({
-      repositories,
+      repositories: formattedRepositories,
     });
   } catch (error) {
     console.error(

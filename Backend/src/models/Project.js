@@ -11,11 +11,13 @@ const projectSchema = new mongoose.Schema(
     description: {
       type: String,
       default: "",
+      trim: true,
     },
 
     language: {
       type: String,
       default: "JavaScript",
+      trim: true,
     },
 
     owner: {
@@ -23,11 +25,61 @@ const projectSchema = new mongoose.Schema(
       ref: "User",
       required: true,
     },
+
+    source: {
+      type: {
+        type: String,
+        enum: ["blank", "github"],
+        default: "blank",
+      },
+
+      github: {
+        repositoryId: {
+          type: String,
+          default: null,
+        },
+
+        owner: {
+          type: String,
+          default: null,
+        },
+
+        name: {
+          type: String,
+          default: null,
+        },
+
+        fullName: {
+          type: String,
+          default: null,
+        },
+
+        url: {
+          type: String,
+          default: null,
+        },
+
+        defaultBranch: {
+          type: String,
+          default: null,
+        },
+
+        cloneUrl: {
+          type: String,
+          default: null,
+        },
+      },
+    },
   },
   {
     timestamps: true,
   }
 );
+
+projectSchema.index({
+  owner: 1,
+  "source.github.repositoryId": 1,
+});
 
 const Project = mongoose.model("Project", projectSchema);
 
