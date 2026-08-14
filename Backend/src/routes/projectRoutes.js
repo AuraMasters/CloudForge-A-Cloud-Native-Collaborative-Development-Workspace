@@ -6,6 +6,7 @@ import {
   getProject,
   updateProject,
   deleteProject,
+  importGitHubRepository
 } from "../controllers/projectController.js";
 
 import { protect } from "../middleware/authMiddleware.js";
@@ -19,5 +20,6 @@ router.get("/", getProjects);
 router.get("/:id", getProject);
 router.put("/:id", updateProject);
 router.delete("/:id", deleteProject);
+router.post("/import/github",importGitHubRepository);
 
 export default router;
