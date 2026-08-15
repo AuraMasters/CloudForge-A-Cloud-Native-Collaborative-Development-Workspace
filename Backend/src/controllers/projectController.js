@@ -3,7 +3,7 @@ import { importGitHubRepository as importGitHubRepositoryService } from "../serv
 
 export const createProject = async (req, res) => {
   try {
-    const { name, description, language } = req.body;
+    const { name, description, template } = req.body;
 
     if (!name) {
       return res.status(400).json({
@@ -14,7 +14,7 @@ export const createProject = async (req, res) => {
     const project = await Project.create({
       name,
       description,
-      language,
+      template: template || "blank",
       owner: req.user.id,
     });
 
@@ -73,18 +73,19 @@ export const getProject = async (req, res) => {
 
 export const updateProject = async (req, res) => {
   try {
-    const { name, description, language } = req.body;
+    const { name, description, template } = req.body;
+
+    const updateFields = {};
+    if (name !== undefined) updateFields.name = name;
+    if (description !== undefined) updateFields.description = description;
+    if (template !== undefined) updateFields.template = template;
 
     const project = await Project.findOneAndUpdate(
       {
         _id: req.params.id,
         owner: req.user.id,
       },
-      {
-        name,
-        description,
-        language,
-      },
+      updateFields,
       {
         returnDocument: "after",
         runValidators: true,
@@ -127,7 +128,8 @@ export const deleteProject = async (req, res) => {
     });
   } catch (error) {
     res.status(500).json({
-      message: "Project deleted successfully",
+      message: "Failed to delete project",
+      error: error.message,
     });
   }
 };
