@@ -158,17 +158,16 @@ function GitHubRepositoryModal({
   }
 
   return (
-    <div className="fixed inset-0 z-50 flex items-center justify-center bg-slate-900/40 backdrop-blur-sm p-4">
-      <div className="w-full max-w-2xl max-h-[85vh] bg-white rounded-2xl shadow-xl border border-slate-200 flex flex-col">
-        <div className="flex items-center justify-between p-6 border-b border-slate-200">
+    <div className="fixed inset-0 z-50 flex items-center justify-center bg-slate-900/40 backdrop-blur-sm p-3 sm:p-4 animate-in fade-in">
+      <div className="w-full max-w-2xl max-h-[90vh] bg-white rounded-2xl shadow-xl border border-slate-200 flex flex-col overflow-hidden">
+        {/* Modal Header */}
+        <div className="flex items-center justify-between p-4 sm:p-6 border-b border-slate-200">
           <div>
-            <h3 className="text-xl font-bold text-slate-900">
+            <h3 className="text-lg sm:text-xl font-bold text-slate-900">
               Import from GitHub
             </h3>
-
-            <p className="text-sm text-slate-500 mt-1">
-              Choose a repository to add to your CloudForge
-              projects.
+            <p className="text-xs sm:text-sm text-slate-500 mt-0.5">
+              Choose a repository to clone and manage in CloudForge.
             </p>
           </div>
 
@@ -181,43 +180,42 @@ function GitHubRepositoryModal({
           </button>
         </div>
 
-        <div className="p-6 border-b border-slate-100">
+        {/* Search input */}
+        <div className="p-3.5 sm:p-4 border-b border-slate-100 bg-slate-50/50">
           <input
             type="text"
             value={search}
             onChange={(e) => setSearch(e.target.value)}
-            placeholder="Search repositories..."
+            placeholder="Search repositories by name, language..."
             disabled={loading || Boolean(importingId)}
-            className="w-full px-4 py-3 border border-slate-300 rounded-xl outline-none focus:ring-2 focus:ring-blue-500 focus:border-blue-500 disabled:bg-slate-50"
+            className="w-full px-3.5 py-2.5 bg-white border border-slate-300 rounded-xl outline-none text-xs sm:text-sm focus:ring-2 focus:ring-blue-500 focus:border-blue-500 disabled:bg-slate-100"
           />
         </div>
 
-        <div className="flex-1 overflow-y-auto p-6">
+        {/* Repositories list */}
+        <div className="flex-1 overflow-y-auto p-4 sm:p-6">
           {loading ? (
             <div className="py-12 text-center">
-              <p className="text-sm text-slate-500">
-                Loading GitHub repositories...
+              <p className="text-xs sm:text-sm text-slate-500">
+                Loading your GitHub repositories...
               </p>
             </div>
           ) : repositories.length === 0 ? (
-            <div className="py-12 text-center">
-              <p className="text-sm font-medium text-slate-700">
+            <div className="py-10 text-center">
+              <p className="text-xs sm:text-sm font-semibold text-slate-700">
                 No GitHub repositories found.
               </p>
-
-              <p className="text-sm text-slate-500 mt-1">
-                Make sure your GitHub account has accessible
-                repositories.
+              <p className="text-xs text-slate-500 mt-1">
+                Make sure your GitHub account is connected and has accessible repositories.
               </p>
             </div>
           ) : filteredRepositories.length === 0 ? (
-            <div className="py-12 text-center">
-              <p className="text-sm font-medium text-slate-700">
-                No matching repositories.
+            <div className="py-10 text-center">
+              <p className="text-xs sm:text-sm font-semibold text-slate-700">
+                No matching repositories found.
               </p>
-
-              <p className="text-sm text-slate-500 mt-1">
-                Try another search term.
+              <p className="text-xs text-slate-500 mt-1">
+                Try searching with a different keyword.
               </p>
             </div>
           ) : (
@@ -225,71 +223,69 @@ function GitHubRepositoryModal({
               {filteredRepositories.map((repository) => (
                 <div
                   key={repository.id}
-                  className="border border-slate-200 rounded-xl p-4 hover:border-blue-200 transition-colors"
+                  className="border border-slate-200 rounded-xl p-3.5 sm:p-4 hover:border-blue-300 hover:bg-blue-50/20 transition-all flex flex-col sm:flex-row sm:items-center sm:justify-between gap-3"
                 >
-                  <div className="flex items-start justify-between gap-4">
-                    <div className="min-w-0">
-                      <div className="flex items-center gap-2">
-                        <h4 className="font-semibold text-slate-900 truncate">
-                          {repository.name}
-                        </h4>
+                  <div className="min-w-0 flex-1">
+                    <div className="flex items-center gap-2">
+                      <h4 className="font-bold text-xs sm:text-sm text-slate-900 truncate">
+                        {repository.name}
+                      </h4>
 
-                        <span className="px-2 py-0.5 rounded-md bg-slate-100 text-slate-500 text-xs">
-                          {repository.private
-                            ? "Private"
-                            : "Public"}
-                        </span>
-                      </div>
-
-                      <p className="text-sm text-slate-500 mt-1 truncate">
-                        {repository.fullName}
-                      </p>
-
-                      <p className="text-sm text-slate-500 mt-2 line-clamp-2">
-                        {repository.description ||
-                          "No description provided."}
-                      </p>
-
-                      <div className="flex items-center gap-3 mt-3">
-                        <span className="text-xs font-medium text-blue-600">
-                          {repository.language}
-                        </span>
-
-                        <span className="text-xs text-slate-400">
-                          {repository.defaultBranch}
-                        </span>
-                      </div>
+                      <span className="px-2 py-0.5 rounded-md bg-slate-100 text-slate-600 text-[10px] font-semibold">
+                        {repository.private ? "Private" : "Public"}
+                      </span>
                     </div>
 
-                    <button
-                      onClick={() =>
-                        handleImport(repository)
-                      }
-                      disabled={
-                        repository.alreadyImported ||
-                        importingId === repository.id
-                      }
-                      className={`shrink-0 px-4 py-2 rounded-lg text-sm font-semibold transition-colors ${
-                        repository.alreadyImported
-                          ? "bg-slate-100 text-slate-500 cursor-default"
-                          : "bg-blue-600 text-white hover:bg-blue-700 disabled:opacity-60"
-                      }`}
-                    >
-                      {importingId === repository.id
-                        ? "Importing..."
-                        : repository.alreadyImported
-                        ? "Added ✓"
-                        : "Import"}
-                    </button>
+                    <p className="text-[11px] text-blue-700 font-mono mt-0.5 truncate">
+                      {repository.fullName}
+                    </p>
+
+                    {repository.description && (
+                      <p className="text-xs text-slate-500 mt-1.5 line-clamp-2 leading-relaxed">
+                        {repository.description}
+                      </p>
+                    )}
+
+                    <div className="flex items-center gap-3 mt-2 text-[11px]">
+                      {repository.language && (
+                        <span className="font-semibold text-blue-600">
+                          {repository.language}
+                        </span>
+                      )}
+
+                      <span className="text-slate-400">
+                        {repository.defaultBranch || "main"}
+                      </span>
+                    </div>
                   </div>
+
+                  <button
+                    onClick={() => handleImport(repository)}
+                    disabled={
+                      repository.alreadyImported ||
+                      importingId === repository.id
+                    }
+                    className={`w-full sm:w-auto shrink-0 px-4 py-2 rounded-xl text-xs sm:text-sm font-semibold transition-colors ${
+                      repository.alreadyImported
+                        ? "bg-slate-100 text-slate-500 cursor-default"
+                        : "bg-blue-600 text-white hover:bg-blue-700 disabled:opacity-60 shadow-2xs"
+                    }`}
+                  >
+                    {importingId === repository.id
+                      ? "Importing..."
+                      : repository.alreadyImported
+                      ? "Imported ✓"
+                      : "Import"}
+                  </button>
                 </div>
               ))}
             </div>
           )}
         </div>
 
-        <div className="flex justify-between items-center gap-3 p-6 border-t border-slate-200">
-          <p className="text-xs text-slate-400">
+        {/* Modal Footer */}
+        <div className="flex justify-between items-center gap-3 p-4 sm:p-6 border-t border-slate-200 bg-slate-50/50">
+          <p className="text-xs text-slate-500 font-medium">
             {filteredRepositories.length}{" "}
             {filteredRepositories.length === 1
               ? "repository"
@@ -299,7 +295,7 @@ function GitHubRepositoryModal({
           <button
             onClick={onClose}
             disabled={Boolean(importingId)}
-            className="px-4 py-2.5 rounded-lg border border-slate-300 text-slate-700 font-medium hover:bg-slate-50 disabled:opacity-50"
+            className="px-4 py-2 rounded-xl border border-slate-300 bg-white text-slate-700 text-xs sm:text-sm font-semibold hover:bg-slate-50 disabled:opacity-50"
           >
             Close
           </button>

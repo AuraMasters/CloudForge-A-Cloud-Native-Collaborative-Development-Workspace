@@ -29,23 +29,23 @@ function ProjectCard({
   };
 
   return (
-    <div className="bg-white border border-slate-200 rounded-2xl p-6 shadow-sm hover:shadow-md hover:border-blue-200 transition-all flex flex-col justify-between">
+    <div className="bg-white border border-slate-200/80 rounded-2xl p-4 sm:p-5 shadow-2xs hover:shadow-md hover:border-blue-300 transition-all flex flex-col justify-between group">
       <div>
-        <div className="flex items-start justify-between gap-4">
-          <div className="min-w-0">
-            <h3 className="text-lg font-bold text-slate-900 truncate">
+        <div className="flex items-start justify-between gap-3">
+          <div className="min-w-0 flex-1">
+            <h3 className="text-base sm:text-lg font-bold text-slate-900 truncate group-hover:text-blue-600 transition-colors">
               {project.name}
             </h3>
 
-            <div className="flex items-center gap-2 mt-2">
+            <div className="flex flex-wrap items-center gap-1.5 mt-2">
               {project.template && (
-                <span className="px-2.5 py-0.5 bg-slate-100 text-slate-700 rounded-md text-xs font-semibold uppercase tracking-wider">
+                <span className="px-2 py-0.5 bg-slate-100 text-slate-700 rounded-md text-[10px] sm:text-xs font-bold uppercase tracking-wider">
                   {project.template}
                 </span>
               )}
 
               {isGitHubProject && (
-                <span className="px-2.5 py-0.5 bg-blue-50 text-blue-700 rounded-md text-xs font-semibold flex items-center gap-1">
+                <span className="px-2 py-0.5 bg-blue-50 text-blue-700 rounded-md text-[10px] sm:text-xs font-semibold flex items-center gap-1">
                   <SiGithub className="w-3 h-3 text-slate-800" />
                   <span>GitHub</span>
                 </span>
@@ -53,11 +53,12 @@ function ProjectCard({
             </div>
           </div>
 
-          <div className="flex items-center gap-2">
+          <div className="flex items-center gap-1 shrink-0">
             {onEdit && (
               <button
                 onClick={() => onEdit(project)}
-                className="text-sm text-slate-400 hover:text-blue-600 transition-colors"
+                className="px-2 py-1 rounded-lg text-xs font-semibold text-slate-500 hover:text-blue-600 hover:bg-blue-50 transition-colors"
+                title="Edit Project"
               >
                 Edit
               </button>
@@ -65,37 +66,41 @@ function ProjectCard({
 
             <button
               onClick={handleDelete}
-              className="text-slate-400 hover:text-red-500 transition-colors text-xl"
-              title="Delete project"
+              className="p-1 rounded-lg text-slate-400 hover:text-red-600 hover:bg-red-50 transition-colors text-lg leading-none"
+              title="Delete Project"
             >
               ×
             </button>
           </div>
         </div>
 
-        <p className="text-sm text-slate-500 mt-4 min-h-[40px] line-clamp-2">
+        <p className="text-xs sm:text-sm text-slate-500 mt-3 min-h-[36px] line-clamp-2 leading-relaxed">
           {project.description || "No description provided."}
         </p>
 
         {isGitHubProject && (project.source?.github?.fullName || project.gitRemote?.fullName) && (
-          <div className="mt-3">
-            <p className="text-xs text-slate-400 font-mono truncate">
+          <div className="mt-2.5">
+            <p className="text-[11px] text-blue-700 font-mono font-medium truncate">
               {project.source?.github?.fullName || project.gitRemote?.fullName}
             </p>
           </div>
         )}
       </div>
 
-      <div className="flex items-center justify-between mt-6 pt-4 border-t border-slate-100">
-        <p className="text-xs text-slate-400">
-          Updated {new Date(project.updatedAt).toLocaleDateString()}
+      <div className="flex items-center justify-between mt-5 pt-3.5 border-t border-slate-100 text-xs">
+        <p className="text-[11px] text-slate-400">
+          {new Date(project.updatedAt).toLocaleDateString(undefined, {
+            month: "short",
+            day: "numeric",
+          })}
         </p>
 
         <button
           onClick={() => navigate(`/projects/${project._id}`)}
-          className="text-sm font-semibold text-blue-600 hover:text-blue-700 transition-colors"
+          className="inline-flex items-center gap-1 text-xs font-bold text-blue-600 hover:text-blue-700 transition-colors"
         >
-          Open Workspace →
+          <span>Open Workspace</span>
+          <span>→</span>
         </button>
       </div>
     </div>

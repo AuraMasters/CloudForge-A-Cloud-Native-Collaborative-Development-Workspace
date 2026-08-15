@@ -2,6 +2,7 @@ import express from "express";
 
 import {
   connectGitHub,
+  getGitHubAuthUrl,
   githubCallback,
   getGitHubStatus,
   getGitHubRepositories,
@@ -13,7 +14,10 @@ import { protect } from "../middleware/authMiddleware.js";
 
 const router = express.Router();
 
-// Start GitHub OAuth.
+// Get GitHub OAuth authorization URL via API (recommended for cross-origin setups)
+router.get("/auth-url", protect, getGitHubAuthUrl);
+
+// Direct browser navigation endpoint to start GitHub OAuth.
 // User must already be logged into CloudForge.
 router.get("/connect", protect, connectGitHub);
 
