@@ -37,7 +37,6 @@ export const exchangeCodeForToken = async (code) => {
       "GitHub token exchange error:",
       error.response?.data || error.message
     );
-
     throw new Error("Failed to connect GitHub account");
   }
 };
@@ -56,7 +55,6 @@ export const getGitHubUser = async (accessToken) => {
       "GitHub user fetch error:",
       error.response?.data || error.message
     );
-
     throw new Error("Failed to fetch GitHub user");
   }
 };
@@ -82,19 +80,35 @@ export const getRepositories = async (accessToken) => {
       "GitHub repositories fetch error:",
       error.response?.data || error.message
     );
-
     throw new Error("Failed to fetch GitHub repositories");
   }
 };
 
-export const getRepository = async (
-  accessToken,
-  owner,
-  repo
-) => {
+export const getRepository = async (accessToken, owner, repo) => {
+  try {
+    const response = await githubApi.get(`/repos/${owner}/${repo}`, {
+      headers: {
+        Authorization: `Bearer ${accessToken}`,
+      },
+    });
+
+    return response.data;
+  } catch (error) {
+    console.error(
+      "GitHub repository fetch error:",
+      error.response?.data || error.message
+    );
+    throw new Error("Failed to fetch GitHub repository");
+  }
+};
+
+/**
+ * Fetch the full recursive file tree of a GitHub repository
+ */
+export const getRepoTree = async (accessToken, owner, repo, branch = "main") => {
   try {
     const response = await githubApi.get(
-      `/repos/${owner}/${repo}`,
+      `/repos/${owner}/${repo}/git/trees/${branch}?recursive=1`,
       {
         headers: {
           Authorization: `Bearer ${accessToken}`,
@@ -105,10 +119,192 @@ export const getRepository = async (
     return response.data;
   } catch (error) {
     console.error(
-      "GitHub repository fetch error:",
+      "GitHub tree fetch error:",
       error.response?.data || error.message
     );
+    // If recursive git tree fails (e.g. branch is master or empty), attempt with master or root contents
+    if (branch === "main") {
+      try {
+        const fallback = await githubApi.get(
+          `/repos/${owner}/${repo}/git/trees/master?recursive=1`,
+          {
+            headers: {
+              Authorization: `Bearer ${accessToken}`,
+            },
+          }
+        );
+        return fallback.data;
+      } catch {
+        // Return empty tree
+      }
+    }
+    return { tree: [], truncated: false };
+  }
+};
 
-    throw new Error("Failed to fetch GitHub repository");
+/**
+ * Fetch raw content of a file from GitHub repository
+ */
+export const getRawFileContent = async (accessToken, owner, repo, path, ref = "main") => {
+  try {
+    const response = await githubApi.get(
+      `/repos/${owner}/${repo}/contents/${path}?ref=${ref}`,
+      {
+        headers: {
+          Authorization: `Bearer ${accessToken}`,
+        },
+      }
+    );
+
+    if (response.data && response.data.content) {
+      const decodedContent = Buffer.from(response.data.content, "base64").toString("utf-8");
+      return {
+        content: decodedContent,
+        sha: response.data.sha,
+        size: response.data.size,
+      };
+    }
+    return { content: "", sha: "", size: 0 };
+  } catch (error) {
+    console.error(
+      `GitHub get content error for ${path}:`,
+      error.response?.data || error.message
+    );
+    return { content: "", sha: "", size: 0 };
+  }
+};
+
+/**
+ * Fetch commits for a GitHub repository
+ */
+export const getRepoCommits = async (accessToken, owner, repo, branch = "main", perPage = 30) => {
+  try {
+    const response = await githubApi.get(`/repos/${owner}/${repo}/commits`, {
+      headers: {
+        Authorization: `Bearer ${accessToken}`,
+      },
+      params: {
+        sha: branch,
+        per_page: perPage,
+      },
+    });
+
+    return response.data;
+  } catch (error) {
+    console.error(
+      "GitHub commits fetch error:",
+      error.response?.data || error.message
+    );
+    return [];
+  }
+};
+
+/**
+ * Fetch detailed single commit diff and file changes from GitHub
+ */
+export const getCommitDetails = async (accessToken, owner, repo, commitSha) => {
+  try {
+    const response = await githubApi.get(
+      `/repos/${owner}/${repo}/commits/${commitSha}`,
+      {
+        headers: {
+          Authorization: `Bearer ${accessToken}`,
+        },
+      }
+    );
+
+    return response.data;
+  } catch (error) {
+    console.error(
+      `GitHub commit details error for ${commitSha}:`,
+      error.response?.data || error.message
+    );
+    throw new Error("Failed to fetch commit details");
+  }
+};
+
+/**
+ * Create a new repository on user's GitHub account
+ */
+export const createGitHubRepository = async (
+  accessToken,
+  name,
+  description = "",
+  isPrivate = false
+) => {
+  try {
+    const response = await githubApi.post(
+      "/user/repos",
+      {
+        name,
+        description,
+        private: isPrivate,
+        auto_init: true,
+      },
+      {
+        headers: {
+          Authorization: `Bearer ${accessToken}`,
+        },
+      }
+    );
+
+    return response.data;
+  } catch (error) {
+    console.error(
+      "GitHub create repository error:",
+      error.response?.data || error.message
+    );
+    throw new Error(
+      error.response?.data?.message || "Failed to create GitHub repository"
+    );
+  }
+};
+
+/**
+ * Create or update a file on GitHub repository (Commit to GitHub)
+ */
+export const commitAndPushFile = async (
+  accessToken,
+  owner,
+  repo,
+  path,
+  content,
+  message,
+  branch = "main",
+  sha = null
+) => {
+  try {
+    const cleanPath = path.startsWith("/") ? path.slice(1) : path;
+    const base64Content = Buffer.from(content, "utf-8").toString("base64");
+
+    const payload = {
+      message: message || `Update ${cleanPath}`,
+      content: base64Content,
+      branch,
+    };
+
+    if (sha) {
+      payload.sha = sha;
+    }
+
+    const response = await githubApi.put(
+      `/repos/${owner}/${repo}/contents/${cleanPath}`,
+      payload,
+      {
+        headers: {
+          Authorization: `Bearer ${accessToken}`,
+        },
+      }
+    );
+
+    return response.data;
+  } catch (error) {
+    console.error(
+      `GitHub commit & push file error for ${path}:`,
+      error.response?.data || error.message
+    );
+    throw new Error(
+      error.response?.data?.message || `Failed to push ${path} to GitHub`
+    );
   }
 };
