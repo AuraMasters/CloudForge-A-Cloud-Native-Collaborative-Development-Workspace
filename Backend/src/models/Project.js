@@ -14,12 +14,6 @@ const projectSchema = new mongoose.Schema(
       trim: true,
     },
 
-    language: {
-      type: String,
-      default: "JavaScript",
-      trim: true,
-    },
-
     owner: {
       type: mongoose.Schema.Types.ObjectId,
       ref: "User",
@@ -68,6 +62,58 @@ const projectSchema = new mongoose.Schema(
           type: String,
           default: null,
         },
+      },
+    },
+
+    template: {
+      type: String,
+      enum: ["react", "nodejs", "python", "html-css", "java", "go", "blank"],
+      default: "blank",
+    },
+
+    currentBranch: {
+      type: String,
+      default: "main",
+      trim: true,
+    },
+
+    branches: {
+      type: [String],
+      default: ["main"],
+    },
+
+    gitRemote: {
+      connected: {
+        type: Boolean,
+        default: false,
+      },
+      owner: {
+        type: String,
+        default: null,
+      },
+      repo: {
+        type: String,
+        default: null,
+      },
+      fullName: {
+        type: String,
+        default: null,
+      },
+      url: {
+        type: String,
+        default: null,
+      },
+      cloneUrl: {
+        type: String,
+        default: null,
+      },
+      defaultBranch: {
+        type: String,
+        default: "main",
+      },
+      lastSyncedAt: {
+        type: Date,
+        default: null,
       },
     },
   },
