@@ -45,8 +45,6 @@ export const importGitHubRepository = async (
 
     description: repository.description || "",
 
-    language: repository.language || "JavaScript",
-
     owner: userId,
 
     source: {

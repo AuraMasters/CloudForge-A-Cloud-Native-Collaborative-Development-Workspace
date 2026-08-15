@@ -13,13 +13,27 @@ export interface ProjectSource {
   github?: GitHubProjectSource;
 }
 
+export interface GitRemote {
+  connected: boolean;
+  owner?: string;
+  repo?: string;
+  fullName?: string;
+  url?: string;
+  cloneUrl?: string;
+  defaultBranch?: string;
+  lastSyncedAt?: string;
+}
+
 export interface Project {
   _id: string;
   name: string;
   description: string;
-  language: string;
+  template?: string;
   owner: string;
   source: ProjectSource;
+  currentBranch?: string;
+  branches?: string[];
+  gitRemote?: GitRemote;
   createdAt: string;
   updatedAt: string;
 }
@@ -27,5 +41,5 @@ export interface Project {
 export interface CreateProjectData {
   name: string;
   description: string;
-  language: string;
+  template?: string;
 }
