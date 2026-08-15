@@ -29,13 +29,14 @@ export const connectGitHub = async (req, res) => {
       }
     );
 
+    const isProduction = process.env.NODE_ENV === "production" || Boolean(process.env.RENDER);
+
     // Store the nonce separately so we can verify that
     // the callback belongs to the OAuth flow we started.
     res.cookie("github_oauth_nonce", nonce, {
       httpOnly: true,
-      secure: process.env.NODE_ENV === "production",
-      sameSite:
-        process.env.NODE_ENV === "production" ? "none" : "lax",
+      secure: isProduction,
+      sameSite: isProduction ? "none" : "lax",
       maxAge: 10 * 60 * 1000,
     });
 
@@ -145,14 +146,17 @@ export const githubCallback = async (req, res) => {
       });
     }
 
+    const clientUrl = (process.env.CLIENT_URL || "http://localhost:5173").replace(/\/$/, "");
+
     return res.redirect(
-      `${process.env.CLIENT_URL}/github?connected=true`
+      `${clientUrl}/github?connected=true`
     );
   } catch (error) {
     console.error("GitHub callback error:", error);
+    const clientUrl = (process.env.CLIENT_URL || "http://localhost:5173").replace(/\/$/, "");
 
     return res.redirect(
-      `${process.env.CLIENT_URL}/github?connected=false`
+      `${clientUrl}/github?connected=false`
     );
   }
 };
