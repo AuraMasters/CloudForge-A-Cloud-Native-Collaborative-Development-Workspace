@@ -56,7 +56,7 @@ function Projects() {
     const query = search.trim().toLowerCase();
     if (!query) return projects;
     return projects.filter((project) =>
-      [project.name, project.description, project.language].some((value) => value?.toLowerCase().includes(query))
+      [project.name, project.description, project.template].some((value) => value?.toLowerCase().includes(query))
     );
   }, [projects, search]);
 
