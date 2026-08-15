@@ -1,8 +1,29 @@
 import API_URL from "./api";
 
 export const githubApi = {
-  connect: () => {
-    window.location.href = `${API_URL}/api/github/connect`;
+  connect: async () => {
+    try {
+      const clientOrigin = window.location.origin;
+      const res = await fetch(
+        `${API_URL}/api/github/auth-url?clientUrl=${encodeURIComponent(clientOrigin)}`,
+        {
+          method: "GET",
+          credentials: "include",
+        }
+      );
+
+      if (res.ok) {
+        const data = await res.json();
+        if (data.url) {
+          window.location.href = data.url;
+          return;
+        }
+      }
+      // Fallback to direct navigation
+      window.location.href = `${API_URL}/api/github/connect?clientUrl=${encodeURIComponent(clientOrigin)}`;
+    } catch {
+      window.location.href = `${API_URL}/api/github/connect`;
+    }
   },
 
   getStatus: async () => {

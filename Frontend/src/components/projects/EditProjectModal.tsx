@@ -73,15 +73,15 @@ function EditProjectModal({
   };
 
   return (
-    <div className="fixed inset-0 z-50 flex items-center justify-center bg-slate-900/40 backdrop-blur-sm p-4">
-      <div className="w-full max-w-md bg-white rounded-2xl shadow-xl border border-slate-200 p-6">
-        <div className="flex items-center justify-between mb-6">
+    <div className="fixed inset-0 z-50 flex items-center justify-center bg-slate-900/40 backdrop-blur-sm p-4 animate-in fade-in">
+      <div className="w-full max-w-lg bg-white rounded-2xl shadow-xl border border-slate-200 p-5 sm:p-6 max-h-[90vh] overflow-y-auto">
+        <div className="flex items-center justify-between mb-5">
           <div>
-            <h3 className="text-xl font-bold text-slate-900">
+            <h3 className="text-lg sm:text-xl font-bold text-slate-900">
               Edit Project
             </h3>
-            <p className="text-sm text-slate-500 mt-1">
-              Update your project details.
+            <p className="text-xs sm:text-sm text-slate-500 mt-0.5">
+              Update your workspace project metadata.
             </p>
           </div>
 
@@ -96,7 +96,7 @@ function EditProjectModal({
 
         <div className="space-y-4">
           <div>
-            <label className="block text-sm font-medium text-slate-700 mb-1.5">
+            <label className="block text-xs sm:text-sm font-semibold text-slate-700 mb-1.5">
               Project Name
             </label>
             <input
@@ -104,12 +104,12 @@ function EditProjectModal({
               value={name}
               onChange={(e) => setName(e.target.value)}
               disabled={loading}
-              className="w-full px-4 py-3 border border-slate-300 rounded-lg outline-none focus:ring-2 focus:ring-blue-500 focus:border-blue-500 disabled:bg-slate-50 font-medium"
+              className="w-full px-3.5 py-2.5 border border-slate-300 rounded-xl outline-none text-xs sm:text-sm focus:ring-2 focus:ring-blue-500 focus:border-blue-500 disabled:bg-slate-50 font-medium"
             />
           </div>
 
           <div>
-            <label className="block text-sm font-medium text-slate-700 mb-1.5">
+            <label className="block text-xs sm:text-sm font-semibold text-slate-700 mb-1.5">
               Description
             </label>
             <textarea
@@ -117,24 +117,24 @@ function EditProjectModal({
               onChange={(e) => setDescription(e.target.value)}
               rows={3}
               disabled={loading}
-              className="w-full px-4 py-3 border border-slate-300 rounded-lg outline-none resize-none focus:ring-2 focus:ring-blue-500 focus:border-blue-500 disabled:bg-slate-50"
+              className="w-full px-3.5 py-2.5 border border-slate-300 rounded-xl outline-none text-xs sm:text-sm resize-none focus:ring-2 focus:ring-blue-500 focus:border-blue-500 disabled:bg-slate-50"
             />
           </div>
         </div>
 
-        <div className="flex justify-end gap-3 mt-6">
+        <div className="flex justify-end gap-2.5 mt-6 pt-4 border-t border-slate-100">
           <button
             onClick={onClose}
             disabled={loading}
-            className="px-4 py-2.5 rounded-lg border border-slate-300 text-slate-700 font-medium hover:bg-slate-50 disabled:opacity-50"
+            className="px-4 py-2 rounded-xl border border-slate-300 text-slate-700 text-xs sm:text-sm font-medium hover:bg-slate-50 disabled:opacity-50"
           >
             Cancel
           </button>
 
           <button
             onClick={handleUpdate}
-            disabled={loading}
-            className="px-5 py-2.5 rounded-lg bg-blue-600 text-white font-semibold hover:bg-blue-700 disabled:opacity-60 disabled:cursor-not-allowed"
+            disabled={loading || !name.trim()}
+            className="px-5 py-2 rounded-xl bg-blue-600 text-white text-xs sm:text-sm font-semibold hover:bg-blue-700 disabled:opacity-60 disabled:cursor-not-allowed shadow-md shadow-blue-500/20"
           >
             {loading ? "Saving..." : "Save Changes"}
           </button>

@@ -12,9 +12,81 @@ import {
 
 import Project from "../models/Project.js";
 
+/**
+ * Generate GitHub OAuth Authorization URL
+ * GET /api/github/auth-url
+ */
+export const getGitHubAuthUrl = async (req, res) => {
+  try {
+    const nonce = crypto.randomBytes(32).toString("hex");
+    const clientUrl = (
+      req.query.clientUrl ||
+      req.headers.origin ||
+      process.env.CLIENT_URL ||
+      "http://localhost:5173"
+    ).replace(/\/$/, "");
+
+    // Create a signed OAuth state containing the
+    // currently authenticated CloudForge user and destination URL.
+    const state = jwt.sign(
+      {
+        userId: req.user._id.toString(),
+        nonce,
+        clientUrl,
+      },
+      process.env.JWT_SECRET,
+      {
+        expiresIn: "15m",
+      }
+    );
+
+    const isProduction =
+      process.env.NODE_ENV === "production" || Boolean(process.env.RENDER);
+
+    // Optional nonce cookie for same-domain setups
+    res.cookie("github_oauth_nonce", nonce, {
+      httpOnly: true,
+      secure: isProduction,
+      sameSite: isProduction ? "none" : "lax",
+      maxAge: 15 * 60 * 1000,
+    });
+
+    const callbackUrl =
+      process.env.GITHUB_CALLBACK_URL ||
+      `${req.protocol}://${req.get("host")}/api/github/callback`;
+
+    const params = new URLSearchParams({
+      client_id: process.env.GITHUB_CLIENT_ID || "",
+      redirect_uri: callbackUrl,
+      scope: "read:user user:email repo",
+      state,
+    });
+
+    const githubAuthorizationUrl = `https://github.com/login/oauth/authorize?${params.toString()}`;
+
+    return res.json({
+      url: githubAuthorizationUrl,
+    });
+  } catch (error) {
+    console.error("GitHub auth-url error:", error);
+    return res.status(500).json({
+      message: "Failed to generate GitHub authorization URL",
+    });
+  }
+};
+
+/**
+ * Direct GitHub OAuth Initiation (GET /api/github/connect)
+ */
 export const connectGitHub = async (req, res) => {
   try {
     const nonce = crypto.randomBytes(32).toString("hex");
+    const clientUrl = (
+      req.query.clientUrl ||
+      req.headers.origin ||
+      process.env.CLIENT_URL ||
+      "http://localhost:5173"
+    ).replace(/\/$/, "");
 
     // Create a signed OAuth state containing the
     // currently authenticated CloudForge user.
@@ -22,33 +94,36 @@ export const connectGitHub = async (req, res) => {
       {
         userId: req.user._id.toString(),
         nonce,
+        clientUrl,
       },
       process.env.JWT_SECRET,
       {
-        expiresIn: "10m",
+        expiresIn: "15m",
       }
     );
 
-    const isProduction = process.env.NODE_ENV === "production" || Boolean(process.env.RENDER);
+    const isProduction =
+      process.env.NODE_ENV === "production" || Boolean(process.env.RENDER);
 
-    // Store the nonce separately so we can verify that
-    // the callback belongs to the OAuth flow we started.
     res.cookie("github_oauth_nonce", nonce, {
       httpOnly: true,
       secure: isProduction,
       sameSite: isProduction ? "none" : "lax",
-      maxAge: 10 * 60 * 1000,
+      maxAge: 15 * 60 * 1000,
     });
 
+    const callbackUrl =
+      process.env.GITHUB_CALLBACK_URL ||
+      `${req.protocol}://${req.get("host")}/api/github/callback`;
+
     const params = new URLSearchParams({
-      client_id: process.env.GITHUB_CLIENT_ID,
-      redirect_uri: process.env.GITHUB_CALLBACK_URL,
+      client_id: process.env.GITHUB_CLIENT_ID || "",
+      redirect_uri: callbackUrl,
       scope: "read:user user:email repo",
       state,
     });
 
-    const githubAuthorizationUrl =
-      `https://github.com/login/oauth/authorize?${params.toString()}`;
+    const githubAuthorizationUrl = `https://github.com/login/oauth/authorize?${params.toString()}`;
 
     return res.redirect(githubAuthorizationUrl);
   } catch (error) {
@@ -65,48 +140,34 @@ export const connectGitHub = async (req, res) => {
  * GET /api/github/callback
  */
 export const githubCallback = async (req, res) => {
+  let targetClientUrl = (process.env.CLIENT_URL || "http://localhost:5173").replace(/\/$/, "");
+
   try {
     const { code, state } = req.query;
 
-    const storedNonce = req.cookies.github_oauth_nonce;
-
     if (!code || !state) {
-      return res.status(400).json({
-        message: "Missing GitHub authorization code or state",
-      });
+      return res.redirect(`${targetClientUrl}/github?connected=false&error=missing_code_or_state`);
     }
 
-    if (!storedNonce) {
-      return res.status(403).json({
-        message: "GitHub OAuth session expired",
-      });
-    }
-
-    // Verify the signed state.
+    // Verify the cryptographically signed state.
     let decodedState;
-
     try {
-      decodedState = jwt.verify(
-        state,
-        process.env.JWT_SECRET
-      );
+      decodedState = jwt.verify(state, process.env.JWT_SECRET);
     } catch (error) {
-      return res.status(403).json({
-        message: "Invalid or expired GitHub OAuth state",
-      });
+      console.error("GitHub OAuth state verification failed:", error);
+      return res.redirect(`${targetClientUrl}/github?connected=false&error=invalid_state`);
     }
 
-    // Verify that the state belongs to the OAuth request
-    // that was started from this browser.
-    if (decodedState.nonce !== storedNonce) {
-      return res.status(403).json({
-        message: "Invalid GitHub OAuth request",
-      });
+    if (decodedState.clientUrl) {
+      targetClientUrl = decodedState.clientUrl.replace(/\/$/, "");
     }
 
     const cloudForgeUserId = decodedState.userId;
+    if (!cloudForgeUserId) {
+      return res.redirect(`${targetClientUrl}/github?connected=false&error=missing_user`);
+    }
 
-    // Remove OAuth nonce cookie after successful validation.
+    // Clean up nonce cookie if it was present
     res.clearCookie("github_oauth_nonce");
 
     // Exchange GitHub authorization code for access token.
@@ -117,23 +178,15 @@ export const githubCallback = async (req, res) => {
 
     // Check whether this CloudForge user already has
     // a GitHub connection.
-    const existingConnection =
-      await GitHubConnection.findOne({
-        user: cloudForgeUserId,
-      });
+    const existingConnection = await GitHubConnection.findOne({
+      user: cloudForgeUserId,
+    });
 
     if (existingConnection) {
-      existingConnection.githubUserId =
-        String(githubUser.id);
-
-      existingConnection.githubUsername =
-        githubUser.login;
-
-      existingConnection.githubEmail =
-        githubUser.email || null;
-
-      existingConnection.accessToken =
-        accessToken;
+      existingConnection.githubUserId = String(githubUser.id);
+      existingConnection.githubUsername = githubUser.login;
+      existingConnection.githubEmail = githubUser.email || null;
+      existingConnection.accessToken = accessToken;
 
       await existingConnection.save();
     } else {
@@ -146,18 +199,11 @@ export const githubCallback = async (req, res) => {
       });
     }
 
-    const clientUrl = (process.env.CLIENT_URL || "http://localhost:5173").replace(/\/$/, "");
-
-    return res.redirect(
-      `${clientUrl}/github?connected=true`
-    );
+    return res.redirect(`${targetClientUrl}/github?connected=true`);
   } catch (error) {
     console.error("GitHub callback error:", error);
-    const clientUrl = (process.env.CLIENT_URL || "http://localhost:5173").replace(/\/$/, "");
 
-    return res.redirect(
-      `${clientUrl}/github?connected=false`
-    );
+    return res.redirect(`${targetClientUrl}/github?connected=false&error=token_exchange_failed`);
   }
 };
 

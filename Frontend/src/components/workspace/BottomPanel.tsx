@@ -104,15 +104,15 @@ export const BottomPanel: React.FC<BottomPanelProps> = ({
   return (
     <div
       className={`bg-white border-t border-slate-200 flex flex-col font-mono text-xs select-none transition-all shadow-lg ${
-        isExpanded ? "h-80" : "h-52"
+        isExpanded ? "h-64 sm:h-80" : "h-44 sm:h-52"
       }`}
     >
       {/* Panel Tab Header */}
-      <div className="h-9 px-4 bg-slate-100 border-b border-slate-200 flex items-center justify-between">
-        <div className="flex items-center gap-1">
+      <div className="h-9 px-2 sm:px-4 bg-slate-100 border-b border-slate-200 flex items-center justify-between overflow-x-auto">
+        <div className="flex items-center gap-1 overflow-x-auto shrink-0 scrollbar-none">
           <button
             onClick={() => setActiveTab("terminal")}
-            className={`px-3 py-1 rounded-md text-xs flex items-center gap-1.5 font-sans font-semibold transition-colors ${
+            className={`px-2.5 sm:px-3 py-1 rounded-md text-xs flex items-center gap-1.5 font-sans font-semibold transition-colors shrink-0 ${
               activeTab === "terminal"
                 ? "bg-white text-blue-700 shadow-2xs border border-slate-200"
                 : "text-slate-600 hover:text-slate-900"
@@ -124,7 +124,7 @@ export const BottomPanel: React.FC<BottomPanelProps> = ({
 
           <button
             onClick={() => setActiveTab("git")}
-            className={`px-3 py-1 rounded-md text-xs flex items-center gap-1.5 font-sans font-semibold transition-colors ${
+            className={`px-2.5 sm:px-3 py-1 rounded-md text-xs flex items-center gap-1.5 font-sans font-semibold transition-colors shrink-0 ${
               activeTab === "git"
                 ? "bg-white text-blue-700 shadow-2xs border border-slate-200"
                 : "text-slate-600 hover:text-slate-900"
@@ -136,14 +136,15 @@ export const BottomPanel: React.FC<BottomPanelProps> = ({
 
           <button
             onClick={() => setActiveTab("problems")}
-            className={`px-3 py-1 rounded-md text-xs flex items-center gap-1.5 font-sans font-semibold transition-colors ${
+            className={`px-2.5 sm:px-3 py-1 rounded-md text-xs flex items-center gap-1.5 font-sans font-semibold transition-colors shrink-0 ${
               activeTab === "problems"
                 ? "bg-white text-blue-700 shadow-2xs border border-slate-200"
                 : "text-slate-600 hover:text-slate-900"
             }`}
           >
             <AlertCircle className="w-3.5 h-3.5" />
-            <span>Problems (0)</span>
+            <span className="hidden sm:inline">Problems (0)</span>
+            <span className="sm:hidden">Problems</span>
           </button>
         </div>
 

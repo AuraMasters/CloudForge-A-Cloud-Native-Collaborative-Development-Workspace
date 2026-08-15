@@ -47,6 +47,7 @@ export default function ProjectView() {
   const [activeActivityTab, setActiveActivityTab] =
     useState<ActivityBarTab>("explorer");
   const [isBottomPanelOpen, setIsBottomPanelOpen] = useState(false);
+  const [isMobileSidebarOpen, setIsMobileSidebarOpen] = useState(false);
 
   // Working Tree Changes (Staging Area)
   const [changedFiles, setChangedFiles] = useState<
@@ -126,6 +127,11 @@ export default function ProjectView() {
     if (file.type === "directory") return;
 
     setDiffTarget(null);
+
+    // Auto close mobile sidebar when file is opened
+    if (typeof window !== "undefined" && window.innerWidth < 768) {
+      setIsMobileSidebarOpen(false);
+    }
 
     const existingTab = tabs.find((t) => t.fileId === file._id);
     if (existingTab) {
@@ -719,7 +725,7 @@ export default function ProjectView() {
   );
 
   return (
-    <div className="h-screen w-screen flex flex-col bg-slate-50 text-slate-900 overflow-hidden font-sans select-none">
+    <div className="h-screen w-screen flex flex-col bg-slate-50 text-slate-900 overflow-hidden font-sans select-none relative">
       {/* Top Navbar */}
       <WorkspaceNavbar
         project={project}
@@ -731,94 +737,113 @@ export default function ProjectView() {
         onSyncGitHub={handleSyncGitHub}
         onDownloadZip={handleDownloadZip}
         isSyncing={isSyncing}
+        onToggleMobileSidebar={() => setIsMobileSidebarOpen((prev) => !prev)}
+        isMobileSidebarOpen={isMobileSidebarOpen}
       />
 
       {/* Main Workspace Grid: Activity Bar | Primary Sidebar | Center Editor */}
-      <div className="flex-1 flex overflow-hidden">
-        {/* Left Activity Bar */}
-        <ActivityBar
-          activeTab={activeActivityTab}
-          onChangeTab={(tab) => {
-            if (tab === "github") {
-              setIsGitHubModalOpen(true);
-            } else {
-              setActiveActivityTab(tab);
-            }
-          }}
-          changedFilesCount={changedFiles.length}
-          isGitHubConnected={isGitHubConnected}
-        />
+      <div className="flex-1 flex overflow-hidden relative">
+        {/* Mobile Backdrop Overlay */}
+        {isMobileSidebarOpen && (
+          <div
+            onClick={() => setIsMobileSidebarOpen(false)}
+            className="fixed inset-0 bg-slate-900/40 backdrop-blur-xs z-30 md:hidden animate-in fade-in"
+          />
+        )}
 
-        {/* Primary Sidebar Panel */}
-        <div className="w-64 sm:w-72 md:w-80 h-full border-r border-slate-200 bg-slate-50/70 shrink-0 overflow-hidden flex flex-col">
-          {activeActivityTab === "explorer" && (
-            <FileExplorer
-              files={files}
-              activeFileId={activeTabId}
-              onSelectFile={handleSelectFile}
-              onCreateFile={handleCreateFile}
-              onCreateFolder={handleCreateFolder}
-              onRenameFile={handleRenameFile}
-              onDeleteFile={handleDeleteFile}
-              onUploadFiles={handleUploadFiles}
-              onDownloadFile={handleDownloadFile}
-              onRefreshFiles={loadWorkspace}
-              projectName={project.name}
-            />
-          )}
+        {/* Sidebar Container (Slide-out Drawer on Mobile, Static column on Desktop) */}
+        <div
+          className={`fixed md:relative top-13 sm:top-14 md:top-0 bottom-6 md:bottom-0 left-0 z-40 md:z-auto flex h-[calc(100vh-theme(spacing.13)-theme(spacing.6))] sm:h-[calc(100vh-theme(spacing.14)-theme(spacing.6))] md:h-full bg-white shadow-2xl md:shadow-none transition-transform duration-200 ease-in-out shrink-0 ${
+            isMobileSidebarOpen
+              ? "translate-x-0"
+              : "-translate-x-full md:translate-x-0"
+          }`}
+        >
+          {/* Left Activity Bar */}
+          <ActivityBar
+            activeTab={activeActivityTab}
+            onChangeTab={(tab) => {
+              if (tab === "github") {
+                setIsGitHubModalOpen(true);
+              } else {
+                setActiveActivityTab(tab);
+              }
+            }}
+            changedFilesCount={changedFiles.length}
+            isGitHubConnected={isGitHubConnected}
+          />
 
-          {activeActivityTab === "sourceControl" && (
-            <SourceControlPanel
-              project={project}
-              changedFiles={changedFiles}
-              commits={commits}
-              currentBranch={currentBranch}
-              branches={branches}
-              onCommit={handleCommit}
-              onStageFile={handleStageFile}
-              onUnstageFile={handleUnstageFile}
-              onStageAll={handleStageAll}
-              onUnstageAll={handleUnstageAll}
-              onDiscardChange={handleDiscardChange}
-              onDiscardAllChanges={handleDiscardAllChanges}
-              onSelectCommit={(commit) => setSelectedCommit(commit)}
-              onInspectDiff={handleInspectDiff}
-              onSwitchBranch={handleSwitchBranch}
-              onOpenGitHubModal={() => setIsGitHubModalOpen(true)}
-              onSyncGitHub={handleSyncGitHub}
-              isSyncing={isSyncing}
-            />
-          )}
+          {/* Primary Sidebar Panel */}
+          <div className="w-64 sm:w-72 md:w-80 h-full border-r border-slate-200 bg-slate-50/70 shrink-0 overflow-hidden flex flex-col">
+            {activeActivityTab === "explorer" && (
+              <FileExplorer
+                files={files}
+                activeFileId={activeTabId}
+                onSelectFile={handleSelectFile}
+                onCreateFile={handleCreateFile}
+                onCreateFolder={handleCreateFolder}
+                onRenameFile={handleRenameFile}
+                onDeleteFile={handleDeleteFile}
+                onUploadFiles={handleUploadFiles}
+                onDownloadFile={handleDownloadFile}
+                onRefreshFiles={loadWorkspace}
+                projectName={project.name}
+              />
+            )}
 
-          {activeActivityTab === "search" && (
-            <SearchPanel
-              files={files}
-              onSelectMatch={(file) => handleSelectFile(file)}
-            />
-          )}
+            {activeActivityTab === "sourceControl" && (
+              <SourceControlPanel
+                project={project}
+                changedFiles={changedFiles}
+                commits={commits}
+                currentBranch={currentBranch}
+                branches={branches}
+                onCommit={handleCommit}
+                onStageFile={handleStageFile}
+                onUnstageFile={handleUnstageFile}
+                onStageAll={handleStageAll}
+                onUnstageAll={handleUnstageAll}
+                onDiscardChange={handleDiscardChange}
+                onDiscardAllChanges={handleDiscardAllChanges}
+                onSelectCommit={(commit) => setSelectedCommit(commit)}
+                onInspectDiff={handleInspectDiff}
+                onSwitchBranch={handleSwitchBranch}
+                onOpenGitHubModal={() => setIsGitHubModalOpen(true)}
+                onSyncGitHub={handleSyncGitHub}
+                isSyncing={isSyncing}
+              />
+            )}
 
-          {activeActivityTab === "settings" && (
-            <ProjectSettingsPanel
-              project={project}
-              filesCount={files.filter((f) => f.type === "file").length}
-              commitsCount={commits.length}
-              onUpdateProject={(updated) => setProject(updated)}
-              onResetTemplate={(updatedProj, newFiles, newCommits) => {
-                setProject(updatedProj);
-                setFiles(newFiles);
-                setCommits(newCommits);
-                setTabs([]);
-                setActiveTabId(null);
-                setChangedFiles([]);
-                setDiffTarget(null);
-              }}
-              onOpenGitHubModal={() => setIsGitHubModalOpen(true)}
-            />
-          )}
+            {activeActivityTab === "search" && (
+              <SearchPanel
+                files={files}
+                onSelectMatch={(file) => handleSelectFile(file)}
+              />
+            )}
+
+            {activeActivityTab === "settings" && (
+              <ProjectSettingsPanel
+                project={project}
+                filesCount={files.filter((f) => f.type === "file").length}
+                commitsCount={commits.length}
+                onUpdateProject={(updated) => setProject(updated)}
+                onResetTemplate={(updatedProj, newFiles, newCommits) => {
+                  setProject(updatedProj);
+                  setFiles(newFiles);
+                  setCommits(newCommits);
+                  setTabs([]);
+                  setActiveTabId(null);
+                  setChangedFiles([]);
+                  setDiffTarget(null);
+                }}
+                onOpenGitHubModal={() => setIsGitHubModalOpen(true)}
+              />
+            )}
+          </div>
         </div>
 
         {/* Center Area: Code Editor OR Diff Viewer */}
-        <div className="flex-1 flex flex-col h-full overflow-hidden bg-white">
+        <div className="flex-1 flex flex-col h-full overflow-hidden bg-white min-w-0">
           <div className="flex-1 overflow-hidden">
             {diffTarget ? (
               <DiffViewer
@@ -865,7 +890,12 @@ export default function ProjectView() {
         activeLanguage={activeTab?.language || "Plain Text"}
         isBottomPanelOpen={isBottomPanelOpen}
         onToggleBottomPanel={() => setIsBottomPanelOpen(!isBottomPanelOpen)}
-        onOpenSourceControl={() => setActiveActivityTab("sourceControl")}
+        onOpenSourceControl={() => {
+          setActiveActivityTab("sourceControl");
+          if (typeof window !== "undefined" && window.innerWidth < 768) {
+            setIsMobileSidebarOpen(true);
+          }
+        }}
         onSyncGitHub={handleSyncGitHub}
         isSyncing={isSyncing}
       />

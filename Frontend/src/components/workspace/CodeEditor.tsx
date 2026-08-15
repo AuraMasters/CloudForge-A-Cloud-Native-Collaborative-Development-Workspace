@@ -158,15 +158,15 @@ export const CodeEditor: React.FC<CodeEditorProps> = ({
   return (
     <div className="h-full flex flex-col bg-white text-slate-900 overflow-hidden select-none">
       {/* Editor Tab Bar */}
-      <div className="h-9 bg-slate-100/90 border-b border-slate-200 flex items-center justify-between px-1 overflow-x-auto">
-        <div className="flex items-center gap-0.5 overflow-x-auto min-w-0">
+      <div className="h-9 bg-slate-100/90 border-b border-slate-200 flex items-center justify-between px-1 overflow-x-auto select-none">
+        <div className="flex items-center gap-0.5 overflow-x-auto min-w-0 flex-1 scrollbar-none">
           {tabs.map((tab) => {
             const isActive = tab.fileId === activeTabId;
             return (
               <div
                 key={tab.fileId}
                 onClick={() => onSelectTab(tab.fileId)}
-                className={`group h-8 px-3 flex items-center gap-2 text-xs cursor-pointer border-r border-slate-200 transition-colors shrink-0 ${
+                className={`group h-8 px-2.5 sm:px-3 flex items-center gap-1.5 sm:gap-2 text-xs cursor-pointer border-r border-slate-200 transition-colors shrink-0 ${
                   isActive
                     ? "bg-white text-slate-900 font-semibold border-t-2 border-t-blue-600 shadow-2xs"
                     : "bg-slate-100 text-slate-600 hover:bg-slate-200/70 hover:text-slate-900"
@@ -177,7 +177,7 @@ export const CodeEditor: React.FC<CodeEditorProps> = ({
                   type="file"
                   className="w-3.5 h-3.5 shrink-0"
                 />
-                <span className="truncate max-w-[130px]">{tab.name}</span>
+                <span className="truncate max-w-[90px] sm:max-w-[130px]">{tab.name}</span>
 
                 {/* Dirty indicator dot or Close button */}
                 <div className="flex items-center">
@@ -208,27 +208,28 @@ export const CodeEditor: React.FC<CodeEditorProps> = ({
         </div>
 
         {/* Tab actions & Tools */}
-        <div className="flex items-center gap-1 shrink-0 px-2">
-          {/* Zoom controls */}
-          <button
-            onClick={() => setFontSize((s) => Math.max(10, s - 1))}
-            className="p-1 rounded hover:bg-slate-200 text-slate-500 hover:text-slate-800"
-            title="Decrease Font Size"
-          >
-            <ZoomOut className="w-3.5 h-3.5" />
-          </button>
-          <span className="text-[10px] font-mono text-slate-400 w-5 text-center">
-            {fontSize}
-          </span>
-          <button
-            onClick={() => setFontSize((s) => Math.min(22, s + 1))}
-            className="p-1 rounded hover:bg-slate-200 text-slate-500 hover:text-slate-800"
-            title="Increase Font Size"
-          >
-            <ZoomIn className="w-3.5 h-3.5" />
-          </button>
-
-          <div className="h-3.5 w-px bg-slate-300 mx-1" />
+        <div className="flex items-center gap-1 shrink-0 px-1 sm:px-2">
+          {/* Zoom controls (hidden on small mobile) */}
+          <div className="hidden md:flex items-center">
+            <button
+              onClick={() => setFontSize((s) => Math.max(10, s - 1))}
+              className="p-1 rounded hover:bg-slate-200 text-slate-500 hover:text-slate-800"
+              title="Decrease Font Size"
+            >
+              <ZoomOut className="w-3.5 h-3.5" />
+            </button>
+            <span className="text-[10px] font-mono text-slate-400 w-5 text-center">
+              {fontSize}
+            </span>
+            <button
+              onClick={() => setFontSize((s) => Math.min(22, s + 1))}
+              className="p-1 rounded hover:bg-slate-200 text-slate-500 hover:text-slate-800"
+              title="Increase Font Size"
+            >
+              <ZoomIn className="w-3.5 h-3.5" />
+            </button>
+            <div className="h-3.5 w-px bg-slate-300 mx-1" />
+          </div>
 
           {/* Word Wrap Toggle */}
           <button
@@ -243,10 +244,10 @@ export const CodeEditor: React.FC<CodeEditorProps> = ({
             <WrapText className="w-3.5 h-3.5" />
           </button>
 
-          {/* Download Active File */}
+          {/* Download Active File (hidden on small mobile) */}
           <button
             onClick={handleDownloadActiveFile}
-            className="p-1 rounded hover:bg-slate-200 text-slate-500 hover:text-slate-800"
+            className="hidden sm:block p-1 rounded hover:bg-slate-200 text-slate-500 hover:text-slate-800"
             title="Download this file"
           >
             <Download className="w-3.5 h-3.5" />
@@ -255,7 +256,7 @@ export const CodeEditor: React.FC<CodeEditorProps> = ({
           {/* Copy Code */}
           <button
             onClick={handleCopy}
-            className="p-1.5 rounded hover:bg-slate-200 text-slate-500 hover:text-slate-800"
+            className="p-1 sm:p-1.5 rounded hover:bg-slate-200 text-slate-500 hover:text-slate-800"
             title="Copy code to clipboard"
           >
             {copied ? (
@@ -268,7 +269,7 @@ export const CodeEditor: React.FC<CodeEditorProps> = ({
           {activeTab.isDirty && (
             <button
               onClick={() => onSaveFile(activeTab.fileId)}
-              className="p-1 px-2 rounded-md bg-blue-600 hover:bg-blue-700 text-white text-[11px] font-semibold flex items-center gap-1 shadow-xs ml-1"
+              className="p-1 px-2 rounded-md bg-blue-600 hover:bg-blue-700 text-white text-[10px] sm:text-[11px] font-semibold flex items-center gap-1 shadow-xs ml-0.5"
               title="Save (Ctrl+S)"
             >
               <Save className="w-3 h-3" />
@@ -279,17 +280,17 @@ export const CodeEditor: React.FC<CodeEditorProps> = ({
       </div>
 
       {/* Breadcrumb Navigation Bar */}
-      <div className="h-6 px-4 bg-slate-50 border-b border-slate-200 flex items-center justify-between text-[11px] text-slate-500 font-mono">
-        <div className="flex items-center gap-1 truncate">
+      <div className="h-6 px-2.5 sm:px-4 bg-slate-50 border-b border-slate-200 flex items-center justify-between text-[10px] sm:text-[11px] text-slate-500 font-mono">
+        <div className="flex items-center gap-1 truncate max-w-[65%] sm:max-w-[75%]">
           {breadcrumbParts.map((part, index) => (
             <React.Fragment key={index}>
-              {index > 0 && <ChevronRight className="w-3 h-3 text-slate-400" />}
+              {index > 0 && <ChevronRight className="w-3 h-3 text-slate-400 shrink-0" />}
               <span
-                className={
+                className={`truncate ${
                   index === breadcrumbParts.length - 1
                     ? "text-slate-900 font-bold"
-                    : "text-slate-500"
-                }
+                    : "text-slate-500 hidden sm:inline"
+                }`}
               >
                 {part}
               </span>
@@ -297,26 +298,26 @@ export const CodeEditor: React.FC<CodeEditorProps> = ({
           ))}
         </div>
 
-        <div className="flex items-center gap-3 text-[10px] text-slate-500">
-          <span>{activeTab.language}</span>
+        <div className="flex items-center gap-2 text-[10px] text-slate-500 shrink-0">
+          <span className="hidden sm:inline">{activeTab.language}</span>
           <span>
             Ln {cursorPos.line}, Col {cursorPos.col}
           </span>
-          <span>{lines.length} lines</span>
+          <span className="hidden md:inline">{lines.length} lines</span>
         </div>
       </div>
 
       {/* In-Editor Find Bar */}
       {showFind && (
-        <div className="px-4 py-1.5 bg-slate-100 border-b border-slate-200 flex items-center gap-2">
-          <Search className="w-3.5 h-3.5 text-slate-500" />
+        <div className="px-3 sm:px-4 py-1.5 bg-slate-100 border-b border-slate-200 flex items-center gap-2">
+          <Search className="w-3.5 h-3.5 text-slate-500 shrink-0" />
           <input
             type="text"
             value={findQuery}
             onChange={(e) => setFindQuery(e.target.value)}
             placeholder="Find in file..."
             autoFocus
-            className="w-56 px-2 py-0.5 bg-white border border-slate-300 rounded text-xs text-slate-900 outline-none focus:border-blue-500 shadow-2xs"
+            className="flex-1 sm:w-56 px-2 py-0.5 bg-white border border-slate-300 rounded text-xs text-slate-900 outline-none focus:border-blue-500 shadow-2xs"
           />
           <button
             onClick={() => setShowFind(false)}
@@ -333,14 +334,14 @@ export const CodeEditor: React.FC<CodeEditorProps> = ({
         <div
           ref={lineNumbersRef}
           style={{ fontSize: `${fontSize}px` }}
-          className="w-12 py-3 bg-slate-50 text-slate-400 select-none text-right pr-3 overflow-hidden shrink-0 border-r border-slate-200 font-mono leading-5"
+          className="w-9 sm:w-12 py-3 bg-slate-50 text-slate-400 select-none text-right pr-2 sm:pr-3 overflow-hidden shrink-0 border-r border-slate-200 font-mono leading-5"
         >
           {lines.map((_, i) => (
             <div
               key={i}
               className={`${
                 cursorPos.line === i + 1
-                  ? "text-blue-600 font-bold bg-blue-50 -mr-3 pr-3"
+                  ? "text-blue-600 font-bold bg-blue-50 -mr-2 sm:-mr-3 pr-2 sm:pr-3"
                   : ""
               }`}
             >
@@ -363,7 +364,7 @@ export const CodeEditor: React.FC<CodeEditorProps> = ({
           autoComplete="off"
           autoCorrect="off"
           style={{ fontSize: `${fontSize}px` }}
-          className={`flex-1 p-3 bg-white text-slate-900 placeholder-slate-400 outline-none resize-none overflow-auto font-mono leading-5 tab-size-2 ${
+          className={`flex-1 p-2 sm:p-3 bg-white text-slate-900 placeholder-slate-400 outline-none resize-none overflow-auto font-mono leading-5 tab-size-2 ${
             wordWrap ? "whitespace-pre-wrap break-words" : "whitespace-pre"
           }`}
         />

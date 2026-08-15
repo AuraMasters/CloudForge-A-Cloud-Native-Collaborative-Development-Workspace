@@ -114,28 +114,40 @@ function Projects() {
   return (
     <div className="min-h-screen bg-slate-50 text-slate-900 font-sans">
       <Navbar user={user} />
-      <main className="max-w-7xl mx-auto p-6 lg:p-8">
-        <section className="mb-8">
-          <button onClick={() => navigate("/dashboard")} className="text-sm text-slate-500 hover:text-blue-600 transition-colors mb-4">
-            ← Dashboard
+      <main className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-6 sm:py-8">
+        {/* Header Bar */}
+        <section className="mb-6 sm:mb-8">
+          <button
+            onClick={() => navigate("/dashboard")}
+            className="inline-flex items-center gap-1.5 text-xs font-semibold text-slate-500 hover:text-blue-600 transition-colors mb-3"
+          >
+            ← Back to Dashboard
           </button>
-          <div className="flex flex-col lg:flex-row lg:items-end lg:justify-between gap-5">
+
+          <div className="flex flex-col sm:flex-row sm:items-end sm:justify-between gap-4">
             <div>
-              <p className="text-blue-600 text-xs font-bold tracking-widest uppercase mb-2">Workspace</p>
-              <h1 className="text-3xl lg:text-4xl font-bold tracking-tight">Projects</h1>
-              <p className="text-slate-500 mt-2">Create, manage and organize your development projects.</p>
+              <p className="text-blue-600 text-xs font-bold tracking-widest uppercase mb-1">
+                Cloud Workspaces
+              </p>
+              <h1 className="text-2xl sm:text-3xl lg:text-4xl font-extrabold tracking-tight text-slate-900">
+                Projects
+              </h1>
+              <p className="text-xs sm:text-sm text-slate-500 mt-1">
+                Create, manage, and synchronize your cloud workspaces.
+              </p>
             </div>
-            <div className="flex flex-col sm:flex-row gap-3">
+
+            <div className="flex flex-col sm:flex-row gap-2.5 sm:gap-3">
               <button
                 onClick={() => setShowGitHubImport(true)}
-                className="px-5 py-3 bg-white border border-slate-300 text-slate-700 rounded-xl font-semibold hover:bg-slate-50 transition-colors shadow-sm"
+                className="w-full sm:w-auto px-4 py-2.5 bg-white border border-slate-300 text-slate-700 rounded-xl text-xs sm:text-sm font-semibold hover:bg-slate-50 transition-colors shadow-2xs text-center"
               >
                 Import from GitHub
               </button>
 
               <button
                 onClick={() => setShowCreate(true)}
-                className="px-5 py-3 bg-blue-600 text-white rounded-xl font-semibold hover:bg-blue-700 transition-colors shadow-sm"
+                className="w-full sm:w-auto px-4 py-2.5 bg-blue-600 text-white rounded-xl text-xs sm:text-sm font-semibold hover:bg-blue-700 transition-colors shadow-md shadow-blue-500/20 text-center"
               >
                 + New Project
               </button>
@@ -143,34 +155,43 @@ function Projects() {
           </div>
         </section>
 
-        <section className="bg-white border border-slate-200 rounded-2xl p-4 mb-6">
-          <div className="flex flex-col sm:flex-row gap-3">
+        {/* Search and Filters Bar */}
+        <section className="bg-white border border-slate-200/80 rounded-2xl p-3 sm:p-4 mb-6 shadow-2xs">
+          <div className="flex flex-col sm:flex-row gap-2.5 sm:gap-3">
             <div className="relative flex-1">
               <input
                 type="text"
                 value={search}
                 onChange={(e) => setSearch(e.target.value)}
-                placeholder="Search projects..."
-                className="w-full px-4 py-3 border border-slate-200 rounded-xl outline-none focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
+                placeholder="Search projects by name, description or template..."
+                className="w-full px-3.5 py-2.5 border border-slate-200 rounded-xl outline-none text-xs sm:text-sm focus:ring-2 focus:ring-blue-500 focus:border-blue-500 bg-slate-50 focus:bg-white transition-all"
               />
             </div>
-            <div className="flex items-center justify-center px-4 py-3 rounded-xl bg-slate-50 border border-slate-200 text-sm font-medium text-slate-600">
-              {projects.length} {projects.length === 1 ? "Project" : "Projects"}
+            <div className="flex items-center justify-center px-3.5 py-2 sm:py-2.5 rounded-xl bg-slate-50 border border-slate-200 text-xs font-semibold text-slate-600 shrink-0">
+              {filteredProjects.length} {filteredProjects.length === 1 ? "Project" : "Projects"}
             </div>
           </div>
         </section>
 
+        {/* Project List / Grid */}
         {projects.length === 0 ? (
           <EmptyState
             title="No projects yet"
-            description="Create your first CloudForge project to get started."
-            buttonText="Create Project"
+            description="Create your first CloudForge project or import one from GitHub to get started."
+            buttonText="+ Create Project"
             onButtonClick={() => setShowCreate(true)}
           />
         ) : filteredProjects.length === 0 ? (
-          <EmptyState title="No matching projects" description="Try searching with another project name, description or language." />
+          <EmptyState
+            title="No matching projects"
+            description="No projects match your current search query. Try another keyword."
+          />
         ) : (
-          <ProjectGrid projects={filteredProjects} onDelete={handleDeleteProject} onEdit={(project) => setEditingProject(project)} />
+          <ProjectGrid
+            projects={filteredProjects}
+            onDelete={handleDeleteProject}
+            onEdit={(project) => setEditingProject(project)}
+          />
         )}
       </main>
 

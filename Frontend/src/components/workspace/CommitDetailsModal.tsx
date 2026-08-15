@@ -33,19 +33,19 @@ export const CommitDetailsModal: React.FC<CommitDetailsModalProps> = ({
     0;
 
   return (
-    <div className="fixed inset-0 z-50 flex items-center justify-center bg-slate-900/40 backdrop-blur-xs p-4 animate-in fade-in">
-      <div className="w-full max-w-3xl max-h-[85vh] bg-white border border-slate-200 rounded-2xl shadow-2xl overflow-hidden flex flex-col text-slate-900">
+    <div className="fixed inset-0 z-50 flex items-center justify-center bg-slate-900/40 backdrop-blur-xs p-3 sm:p-4 animate-in fade-in">
+      <div className="w-full max-w-3xl max-h-[90vh] bg-white border border-slate-200 rounded-2xl shadow-2xl overflow-hidden flex flex-col text-slate-900">
         {/* Header */}
-        <div className="p-6 border-b border-slate-200 flex items-start justify-between gap-4">
+        <div className="p-4 sm:p-6 border-b border-slate-200 flex items-start justify-between gap-3">
           <div className="flex items-start gap-3 min-w-0">
-            <div className="w-10 h-10 rounded-xl bg-blue-50 border border-blue-100 flex items-center justify-center text-blue-600 shrink-0">
-              <GitCommitIcon className="w-5 h-5" />
+            <div className="w-9 h-9 sm:w-10 sm:h-10 rounded-xl bg-blue-50 border border-blue-100 flex items-center justify-center text-blue-600 shrink-0">
+              <GitCommitIcon className="w-4 h-4 sm:w-5 sm:h-5" />
             </div>
             <div className="min-w-0">
-              <h2 className="text-lg font-bold text-slate-900 break-words">
+              <h2 className="text-base sm:text-lg font-bold text-slate-900 break-words">
                 {commit.message}
               </h2>
-              <div className="flex flex-wrap items-center gap-3 mt-1.5 text-xs text-slate-500 font-mono">
+              <div className="flex flex-wrap items-center gap-2 sm:gap-3 mt-1.5 text-[11px] sm:text-xs text-slate-500 font-mono">
                 <span className="px-2 py-0.5 rounded bg-slate-100 text-blue-700 font-bold">
                   {commit.sha?.slice(0, 8) || "commit"}
                 </span>
@@ -55,7 +55,7 @@ export const CommitDetailsModal: React.FC<CommitDetailsModalProps> = ({
                 </span>
                 <span className="flex items-center gap-1">
                   <Calendar className="w-3.5 h-3.5" />
-                  {new Date(commit.createdAt).toLocaleString()}
+                  {new Date(commit.createdAt).toLocaleDateString()}
                 </span>
               </div>
             </div>
@@ -70,8 +70,8 @@ export const CommitDetailsModal: React.FC<CommitDetailsModalProps> = ({
         </div>
 
         {/* Author & Stats bar */}
-        <div className="px-6 py-3 bg-slate-50 border-b border-slate-200 flex items-center justify-between text-xs font-mono">
-          <div className="flex items-center gap-2">
+        <div className="px-4 sm:px-6 py-2.5 sm:py-3 bg-slate-50 border-b border-slate-200 flex flex-col sm:flex-row sm:items-center sm:justify-between gap-2 text-xs font-mono">
+          <div className="flex items-center gap-2 min-w-0">
             {commit.author?.avatarUrl ? (
               <img
                 src={commit.author.avatarUrl}
@@ -83,19 +83,19 @@ export const CommitDetailsModal: React.FC<CommitDetailsModalProps> = ({
                 {commit.author?.name?.charAt(0) || "U"}
               </div>
             )}
-            <span className="font-semibold text-slate-800">
+            <span className="font-semibold text-slate-800 truncate">
               {commit.author?.name || "Developer"}
             </span>
             {commit.author?.email && (
-              <span className="text-slate-500 hidden sm:inline">
+              <span className="text-slate-500 hidden md:inline truncate">
                 &lt;{commit.author.email}&gt;
               </span>
             )}
           </div>
 
-          <div className="flex items-center gap-3">
+          <div className="flex items-center gap-2 sm:gap-3 text-[11px] sm:text-xs">
             <span className="text-slate-600">
-              {commit.changes?.length || 0} files changed
+              {commit.changes?.length || 0} files
             </span>
             <span className="text-emerald-700 font-bold">+{totalAdditions}</span>
             <span className="text-red-700 font-bold">-{totalDeletions}</span>

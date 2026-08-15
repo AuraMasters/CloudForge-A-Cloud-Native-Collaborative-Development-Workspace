@@ -115,20 +115,20 @@ export const GitHubRemoteModal: React.FC<GitHubRemoteModalProps> = ({
   };
 
   return (
-    <div className="fixed inset-0 z-50 flex items-center justify-center bg-slate-900/40 backdrop-blur-xs p-4 animate-in fade-in">
-      <div className="w-full max-w-lg bg-white border border-slate-200 rounded-2xl shadow-2xl overflow-hidden flex flex-col text-slate-900">
+    <div className="fixed inset-0 z-50 flex items-center justify-center bg-slate-900/40 backdrop-blur-xs p-3 sm:p-4 animate-in fade-in">
+      <div className="w-full max-w-lg max-h-[90vh] bg-white border border-slate-200 rounded-2xl shadow-2xl overflow-hidden flex flex-col text-slate-900">
         {/* Modal Header */}
-        <div className="p-6 border-b border-slate-200 flex items-center justify-between">
+        <div className="p-4 sm:p-6 border-b border-slate-200 flex items-center justify-between">
           <div className="flex items-center gap-3">
-            <div className="w-10 h-10 rounded-xl bg-slate-100 flex items-center justify-center text-slate-900">
-              <SiGithub className="w-5 h-5" />
+            <div className="w-9 h-9 sm:w-10 sm:h-10 rounded-xl bg-slate-100 flex items-center justify-center text-slate-900 shrink-0">
+              <SiGithub className="w-4 h-4 sm:w-5 sm:h-5" />
             </div>
             <div>
-              <h2 className="text-lg font-bold text-slate-900">
-                GitHub Remote Integration
+              <h2 className="text-base sm:text-lg font-bold text-slate-900">
+                GitHub Remote
               </h2>
               <p className="text-xs text-slate-500">
-                Connect your CloudForge workspace to a GitHub repository.
+                Synchronize your workspace with GitHub.
               </p>
             </div>
           </div>
