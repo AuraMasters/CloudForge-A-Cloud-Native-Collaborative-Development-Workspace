@@ -63,7 +63,6 @@ function Register() {
 
   return (
     <div className="min-h-screen bg-slate-50 text-slate-900 font-sans selection:bg-blue-200 flex items-center justify-center p-4 sm:p-6 relative overflow-hidden">
-      {/* Background soft glow */}
       <div className="absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 w-[320px] sm:w-[500px] h-[300px] bg-blue-400/15 blur-[100px] rounded-full pointer-events-none" />
 
       <div className="w-full max-w-md relative z-10">

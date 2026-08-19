@@ -45,7 +45,6 @@ export const CodeEditor: React.FC<CodeEditorProps> = ({
   const textareaRef = useRef<HTMLTextAreaElement>(null);
   const lineNumbersRef = useRef<HTMLDivElement>(null);
 
-  // Sync scroll between line numbers and textarea
   const handleScroll = (e: React.UIEvent<HTMLTextAreaElement>) => {
     if (lineNumbersRef.current) {
       lineNumbersRef.current.scrollTop = e.currentTarget.scrollTop;
@@ -63,7 +62,6 @@ export const CodeEditor: React.FC<CodeEditorProps> = ({
   };
 
   const handleKeyDown = (e: React.KeyboardEvent<HTMLTextAreaElement>) => {
-    // Ctrl+S / Cmd+S Save
     if ((e.ctrlKey || e.metaKey) && e.key.toLowerCase() === "s") {
       e.preventDefault();
       if (activeTab) {
@@ -72,14 +70,12 @@ export const CodeEditor: React.FC<CodeEditorProps> = ({
       return;
     }
 
-    // Ctrl+F Find
     if ((e.ctrlKey || e.metaKey) && e.key.toLowerCase() === "f") {
       e.preventDefault();
       setShowFind((prev) => !prev);
       return;
     }
 
-    // Tab key indent
     if (e.key === "Tab") {
       e.preventDefault();
       if (!textareaRef.current || !activeTab) return;
@@ -126,7 +122,6 @@ export const CodeEditor: React.FC<CodeEditorProps> = ({
     return activeTab.content.split("\n");
   }, [activeTab?.content]);
 
-  // Breadcrumbs
   const breadcrumbParts = useMemo(() => {
     if (!activeTab) return [];
     return [projectName, ...activeTab.path.split("/").filter(Boolean)];
@@ -157,7 +152,6 @@ export const CodeEditor: React.FC<CodeEditorProps> = ({
 
   return (
     <div className="h-full flex flex-col bg-white text-slate-900 overflow-hidden select-none">
-      {/* Editor Tab Bar */}
       <div className="h-9 bg-slate-100/90 border-b border-slate-200 flex items-center justify-between px-1 overflow-x-auto select-none">
         <div className="flex items-center gap-0.5 overflow-x-auto min-w-0 flex-1 scrollbar-none">
           {tabs.map((tab) => {
@@ -179,7 +173,6 @@ export const CodeEditor: React.FC<CodeEditorProps> = ({
                 />
                 <span className="truncate max-w-[90px] sm:max-w-[130px]">{tab.name}</span>
 
-                {/* Dirty indicator dot or Close button */}
                 <div className="flex items-center">
                   {tab.isDirty ? (
                     <span
@@ -207,9 +200,7 @@ export const CodeEditor: React.FC<CodeEditorProps> = ({
           })}
         </div>
 
-        {/* Tab actions & Tools */}
         <div className="flex items-center gap-1 shrink-0 px-1 sm:px-2">
-          {/* Zoom controls (hidden on small mobile) */}
           <div className="hidden md:flex items-center">
             <button
               onClick={() => setFontSize((s) => Math.max(10, s - 1))}
@@ -231,7 +222,6 @@ export const CodeEditor: React.FC<CodeEditorProps> = ({
             <div className="h-3.5 w-px bg-slate-300 mx-1" />
           </div>
 
-          {/* Word Wrap Toggle */}
           <button
             onClick={() => setWordWrap(!wordWrap)}
             className={`p-1 rounded transition-colors ${
@@ -244,7 +234,6 @@ export const CodeEditor: React.FC<CodeEditorProps> = ({
             <WrapText className="w-3.5 h-3.5" />
           </button>
 
-          {/* Download Active File (hidden on small mobile) */}
           <button
             onClick={handleDownloadActiveFile}
             className="hidden sm:block p-1 rounded hover:bg-slate-200 text-slate-500 hover:text-slate-800"
@@ -253,7 +242,6 @@ export const CodeEditor: React.FC<CodeEditorProps> = ({
             <Download className="w-3.5 h-3.5" />
           </button>
 
-          {/* Copy Code */}
           <button
             onClick={handleCopy}
             className="p-1 sm:p-1.5 rounded hover:bg-slate-200 text-slate-500 hover:text-slate-800"
@@ -279,7 +267,6 @@ export const CodeEditor: React.FC<CodeEditorProps> = ({
         </div>
       </div>
 
-      {/* Breadcrumb Navigation Bar */}
       <div className="h-6 px-2.5 sm:px-4 bg-slate-50 border-b border-slate-200 flex items-center justify-between text-[10px] sm:text-[11px] text-slate-500 font-mono">
         <div className="flex items-center gap-1 truncate max-w-[65%] sm:max-w-[75%]">
           {breadcrumbParts.map((part, index) => (
@@ -307,7 +294,6 @@ export const CodeEditor: React.FC<CodeEditorProps> = ({
         </div>
       </div>
 
-      {/* In-Editor Find Bar */}
       {showFind && (
         <div className="px-3 sm:px-4 py-1.5 bg-slate-100 border-b border-slate-200 flex items-center gap-2">
           <Search className="w-3.5 h-3.5 text-slate-500 shrink-0" />
@@ -328,9 +314,7 @@ export const CodeEditor: React.FC<CodeEditorProps> = ({
         </div>
       )}
 
-      {/* Code Editor Surface with Line Numbers */}
       <div className="flex-1 flex overflow-hidden font-mono bg-white">
-        {/* Line Numbers Gutter */}
         <div
           ref={lineNumbersRef}
           style={{ fontSize: `${fontSize}px` }}
@@ -350,7 +334,6 @@ export const CodeEditor: React.FC<CodeEditorProps> = ({
           ))}
         </div>
 
-        {/* Textarea Code Input */}
         <textarea
           ref={textareaRef}
           value={activeTab.content}

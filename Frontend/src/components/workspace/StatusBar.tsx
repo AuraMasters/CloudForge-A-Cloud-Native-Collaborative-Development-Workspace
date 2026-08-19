@@ -33,9 +33,7 @@ export const StatusBar: React.FC<StatusBarProps> = ({
 }) => {
   return (
     <footer className="h-6 bg-slate-100 border-t border-slate-200 text-slate-600 flex items-center justify-between px-3 text-[11px] font-mono select-none shrink-0 z-10">
-      {/* Left side items */}
       <div className="flex items-center gap-3">
-        {/* Branch / Git */}
         <button
           onClick={onOpenSourceControl}
           className="flex items-center gap-1.5 hover:bg-slate-200 px-1.5 py-0.5 rounded transition-colors text-slate-800 font-semibold"
@@ -45,7 +43,6 @@ export const StatusBar: React.FC<StatusBarProps> = ({
           <span>{currentBranch}</span>
         </button>
 
-        {/* Sync with GitHub Remote */}
         {isGitHubConnected ? (
           <button
             onClick={onSyncGitHub}
@@ -58,7 +55,6 @@ export const StatusBar: React.FC<StatusBarProps> = ({
           </button>
         ) : null}
 
-        {/* Changes pill */}
         {changedFilesCount > 0 && (
           <button
             onClick={onOpenSourceControl}
@@ -68,7 +64,6 @@ export const StatusBar: React.FC<StatusBarProps> = ({
           </button>
         )}
 
-        {/* Terminal panel toggle */}
         <button
           onClick={onToggleBottomPanel}
           className={`flex items-center gap-1 px-1.5 py-0.5 rounded hover:bg-slate-200 transition-colors ${
@@ -81,7 +76,6 @@ export const StatusBar: React.FC<StatusBarProps> = ({
         </button>
       </div>
 
-      {/* Right side items */}
       <div className="flex items-center gap-3">
         <span className="hidden sm:inline text-slate-500">
           Ln {cursorPos.line}, Col {cursorPos.col}

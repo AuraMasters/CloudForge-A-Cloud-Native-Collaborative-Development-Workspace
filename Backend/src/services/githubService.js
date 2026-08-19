@@ -102,9 +102,6 @@ export const getRepository = async (accessToken, owner, repo) => {
   }
 };
 
-/**
- * Fetch the full recursive file tree of a GitHub repository
- */
 export const getRepoTree = async (accessToken, owner, repo, branch = "main") => {
   try {
     const response = await githubApi.get(
@@ -122,7 +119,6 @@ export const getRepoTree = async (accessToken, owner, repo, branch = "main") => 
       "GitHub tree fetch error:",
       error.response?.data || error.message
     );
-    // If recursive git tree fails (e.g. branch is master or empty), attempt with master or root contents
     if (branch === "main") {
       try {
         const fallback = await githubApi.get(
@@ -142,9 +138,6 @@ export const getRepoTree = async (accessToken, owner, repo, branch = "main") => 
   }
 };
 
-/**
- * Fetch raw content of a file from GitHub repository
- */
 export const getRawFileContent = async (accessToken, owner, repo, path, ref = "main") => {
   try {
     const response = await githubApi.get(
@@ -174,9 +167,6 @@ export const getRawFileContent = async (accessToken, owner, repo, path, ref = "m
   }
 };
 
-/**
- * Fetch commits for a GitHub repository
- */
 export const getRepoCommits = async (accessToken, owner, repo, branch = "main", perPage = 30) => {
   try {
     const response = await githubApi.get(`/repos/${owner}/${repo}/commits`, {
@@ -199,9 +189,6 @@ export const getRepoCommits = async (accessToken, owner, repo, branch = "main", 
   }
 };
 
-/**
- * Fetch detailed single commit diff and file changes from GitHub
- */
 export const getCommitDetails = async (accessToken, owner, repo, commitSha) => {
   try {
     const response = await githubApi.get(
@@ -223,9 +210,6 @@ export const getCommitDetails = async (accessToken, owner, repo, commitSha) => {
   }
 };
 
-/**
- * Create a new repository on user's GitHub account
- */
 export const createGitHubRepository = async (
   accessToken,
   name,
@@ -260,9 +244,6 @@ export const createGitHubRepository = async (
   }
 };
 
-/**
- * Create or update a file on GitHub repository (Commit to GitHub)
- */
 export const commitAndPushFile = async (
   accessToken,
   owner,

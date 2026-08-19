@@ -107,7 +107,6 @@ export const BottomPanel: React.FC<BottomPanelProps> = ({
         isExpanded ? "h-64 sm:h-80" : "h-44 sm:h-52"
       }`}
     >
-      {/* Panel Tab Header */}
       <div className="h-9 px-2 sm:px-4 bg-slate-100 border-b border-slate-200 flex items-center justify-between overflow-x-auto">
         <div className="flex items-center gap-1 overflow-x-auto shrink-0 scrollbar-none">
           <button
@@ -177,7 +176,6 @@ export const BottomPanel: React.FC<BottomPanelProps> = ({
         </div>
       </div>
 
-      {/* Panel Body */}
       <div className="flex-1 overflow-y-auto p-3 text-slate-800 space-y-1 bg-white">
         {activeTab === "terminal" ? (
           <div className="bg-slate-950 text-slate-200 p-3 rounded-lg font-mono text-xs overflow-auto h-full space-y-1 shadow-inner">
@@ -191,7 +189,6 @@ export const BottomPanel: React.FC<BottomPanelProps> = ({
               </div>
             ))}
 
-            {/* Interactive Terminal Line Input */}
             <form onSubmit={handleCommand} className="flex items-center gap-2 mt-1">
               <span className="text-emerald-400 font-bold shrink-0">$</span>
               <input
@@ -206,7 +203,7 @@ export const BottomPanel: React.FC<BottomPanelProps> = ({
           </div>
         ) : activeTab === "git" ? (
           <div className="space-y-2 text-xs">
-            <p className="text-slate-500">// Git Operational Log</p>
+            <p className="text-slate-500">Git Operational Log</p>
             {recentCommits.map((c) => (
               <div
                 key={c.sha || c._id}

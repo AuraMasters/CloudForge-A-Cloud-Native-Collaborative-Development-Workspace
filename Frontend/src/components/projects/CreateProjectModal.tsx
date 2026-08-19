@@ -139,7 +139,6 @@ function CreateProjectModal({
         </div>
 
         <div className="space-y-4">
-          {/* Template Picker */}
           <div>
             <label className="block text-xs font-bold uppercase tracking-wider text-slate-700 mb-2">
               Select Starter Template

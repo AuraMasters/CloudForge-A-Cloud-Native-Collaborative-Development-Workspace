@@ -50,9 +50,7 @@ export const WorkspaceNavbar: React.FC<WorkspaceNavbarProps> = ({
 
   return (
     <header className="h-13 sm:h-14 bg-white border-b border-slate-200 px-2.5 sm:px-4 flex items-center justify-between select-none text-slate-800 shadow-2xs z-30">
-      {/* Left section */}
       <div className="flex items-center gap-1.5 sm:gap-3 min-w-0">
-        {/* Mobile Sidebar Toggle */}
         <button
           onClick={onToggleMobileSidebar}
           className={`md:hidden p-1.5 rounded-lg border transition-colors ${
@@ -77,7 +75,6 @@ export const WorkspaceNavbar: React.FC<WorkspaceNavbarProps> = ({
 
         <div className="h-4 w-px bg-slate-200 hidden sm:block" />
 
-        {/* Project Branding */}
         <div className="flex items-center gap-2 min-w-0">
           <div className="w-7 h-7 sm:w-8 sm:h-8 rounded-xl bg-blue-50 border border-blue-100 flex items-center justify-center text-blue-600 font-bold text-xs shrink-0 shadow-2xs">
             CF
@@ -89,7 +86,6 @@ export const WorkspaceNavbar: React.FC<WorkspaceNavbarProps> = ({
           </div>
         </div>
 
-        {/* Workspace Quick Stats */}
         <div className="hidden lg:flex items-center gap-2 pl-2">
           <span className="inline-flex items-center gap-1 px-2 py-0.5 rounded-md bg-slate-100 border border-slate-200 text-[11px] font-medium text-slate-600">
             <FileCode2 className="w-3 h-3 text-slate-500" />
@@ -101,7 +97,6 @@ export const WorkspaceNavbar: React.FC<WorkspaceNavbarProps> = ({
           </span>
         </div>
 
-        {/* GitHub Connection Badge */}
         {isGitHubConnected ? (
           <div className="hidden md:flex items-center gap-1.5 pl-2">
             <a
@@ -141,7 +136,6 @@ export const WorkspaceNavbar: React.FC<WorkspaceNavbarProps> = ({
         )}
       </div>
 
-      {/* Center: Save / Sync status */}
       <div className="flex items-center gap-1 sm:gap-2 text-[11px] sm:text-xs font-medium">
         {isSaving ? (
           <span className="flex items-center gap-1 text-amber-600 animate-pulse bg-amber-50 px-2 py-0.5 sm:px-2.5 sm:py-1 rounded-md border border-amber-200">
@@ -162,9 +156,7 @@ export const WorkspaceNavbar: React.FC<WorkspaceNavbarProps> = ({
         )}
       </div>
 
-      {/* Right Action buttons */}
       <div className="flex items-center gap-1.5 sm:gap-2">
-        {/* Sync button for mobile if GitHub connected */}
         {isGitHubConnected && (
           <button
             onClick={onSyncGitHub}
@@ -176,7 +168,6 @@ export const WorkspaceNavbar: React.FC<WorkspaceNavbarProps> = ({
           </button>
         )}
 
-        {/* Mobile GitHub link button if not connected */}
         {!isGitHubConnected && (
           <button
             onClick={onOpenGitHubModal}
@@ -187,7 +178,6 @@ export const WorkspaceNavbar: React.FC<WorkspaceNavbarProps> = ({
           </button>
         )}
 
-        {/* Export / Download Project ZIP */}
         <button
           onClick={onDownloadZip}
           className="flex items-center gap-1.5 px-2.5 sm:px-3 py-1.5 rounded-lg bg-slate-100 hover:bg-slate-200 text-slate-700 text-xs font-semibold transition-colors border border-slate-200"

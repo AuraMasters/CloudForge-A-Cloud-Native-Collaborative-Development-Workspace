@@ -58,10 +58,6 @@ const detectLanguage = (filename) => {
   }
 };
 
-/**
- * GET /api/projects/:id/workspace
- * Initialize and fetch complete workspace data
- */
 export const getWorkspace = async (req, res) => {
   try {
     const project = await Project.findOne({
@@ -77,10 +73,8 @@ export const getWorkspace = async (req, res) => {
       path: 1,
     });
 
-    // If project has no files yet, seed initial files
     if (files.length === 0) {
       if (project.source?.type === "github" && project.source?.github) {
-        // Try fetching from GitHub if account is connected
         const connection = await GitHubConnection.findOne({
           user: req.user.id,
         });
@@ -152,7 +146,6 @@ export const getWorkspace = async (req, res) => {
           files = await ProjectFile.insertMany(docs);
         }
       } else {
-        // Normal / Blank project template seeding
         const templateType = project.template || "blank";
         const templateFiles = getTemplateFiles(templateType, project.name);
         const docs = templateFiles.map((f) => ({
@@ -162,7 +155,6 @@ export const getWorkspace = async (req, res) => {
         }));
         files = await ProjectFile.insertMany(docs);
 
-        // Create initial local Git commit
         const initialSha = crypto.randomBytes(20).toString("hex");
         await ProjectCommit.create({
           projectId: project._id,
@@ -188,7 +180,6 @@ export const getWorkspace = async (req, res) => {
       }
     }
 
-    // Fetch commits
     let commits = [];
     const isGitHubLinked =
       project.source?.type === "github" || project.gitRemote?.connected;
@@ -252,9 +243,6 @@ export const getWorkspace = async (req, res) => {
   }
 };
 
-/**
- * GET /api/projects/:id/files (or /workspace/files)
- */
 export const getProjectFiles = async (req, res) => {
   try {
     const project = await Project.findOne({
@@ -291,9 +279,6 @@ export const getProjectFiles = async (req, res) => {
   }
 };
 
-/**
- * POST /api/projects/:id/files (or /workspace/files)
- */
 export const createProjectFile = async (req, res) => {
   try {
     const { name, path, type = "file", content = "" } = req.body;
@@ -343,9 +328,6 @@ export const createProjectFile = async (req, res) => {
   }
 };
 
-/**
- * PUT /api/projects/:id/files/:fileId
- */
 export const updateProjectFile = async (req, res) => {
   try {
     const { content, name, path } = req.body;
@@ -393,9 +375,6 @@ export const updateProjectFile = async (req, res) => {
   }
 };
 
-/**
- * PUT /api/projects/:id/files/:fileId/rename
- */
 export const renameProjectFile = async (req, res) => {
   try {
     const { newName } = req.body;
@@ -456,9 +435,6 @@ export const renameProjectFile = async (req, res) => {
   }
 };
 
-/**
- * DELETE /api/projects/:id/files/:fileId
- */
 export const deleteProjectFile = async (req, res) => {
   try {
     const project = await Project.findOne({
@@ -497,9 +473,6 @@ export const deleteProjectFile = async (req, res) => {
   }
 };
 
-/**
- * GET /api/projects/:id/git/commits
- */
 export const getProjectCommits = async (req, res) => {
   try {
     const project = await Project.findOne({
@@ -566,9 +539,6 @@ export const getProjectCommits = async (req, res) => {
   }
 };
 
-/**
- * GET /api/projects/:id/git/commits/:sha
- */
 export const getProjectCommitDetails = async (req, res) => {
   try {
     const { sha } = req.params;
@@ -646,9 +616,6 @@ export const getProjectCommitDetails = async (req, res) => {
   }
 };
 
-/**
- * POST /api/projects/:id/git/commit
- */
 export const createProjectCommit = async (req, res) => {
   try {
     const { message, changes = [] } = req.body;
@@ -745,9 +712,6 @@ export const createProjectCommit = async (req, res) => {
   }
 };
 
-/**
- * POST /api/projects/:id/git/branches
- */
 export const createOrSwitchBranch = async (req, res) => {
   try {
     const { branch, branchName, createNew = false } = req.body;
@@ -787,9 +751,6 @@ export const createOrSwitchBranch = async (req, res) => {
   }
 };
 
-/**
- * POST /api/projects/:id/git/link-github
- */
 export const linkProjectToGitHub = async (req, res) => {
   try {
     const { repoUrl, repositoryUrl, owner: inputOwner, repo: inputRepo } = req.body;
@@ -870,9 +831,6 @@ export const linkProjectToGitHub = async (req, res) => {
   }
 };
 
-/**
- * POST /api/projects/:id/git/publish-github
- */
 export const publishProjectToGitHub = async (req, res) => {
   try {
     const { name, description = "", isPrivate = false } = req.body;
@@ -950,9 +908,6 @@ export const publishProjectToGitHub = async (req, res) => {
   }
 };
 
-/**
- * POST /api/projects/:id/git/sync (or /workspace/sync-github)
- */
 export const syncProjectWithGitHub = async (req, res) => {
   try {
     const project = await Project.findOne({
@@ -984,7 +939,6 @@ export const syncProjectWithGitHub = async (req, res) => {
     const repo = project.source?.github?.name || project.gitRemote?.repo;
     const branch = project.currentBranch || "main";
 
-    // 1. Pull latest tree from GitHub
     const treeData = await getRepoTree(
       connection.accessToken,
       owner,
@@ -1085,10 +1039,6 @@ export const syncProjectWithGitHub = async (req, res) => {
   }
 };
 
-/**
- * POST /api/projects/:id/workspace/reset-template
- * Switch template preset and re-seed workspace files
- */
 export const resetWorkspaceTemplate = async (req, res) => {
   try {
     const { template } = req.body;
@@ -1107,10 +1057,8 @@ export const resetWorkspaceTemplate = async (req, res) => {
       return res.status(404).json({ message: "Project not found" });
     }
 
-    // 1. Delete existing workspace files
     await ProjectFile.deleteMany({ projectId: project._id });
 
-    // 2. Generate new template files
     const templateFiles = getTemplateFiles(template, project.name);
     const docs = templateFiles.map((f) => ({
       ...f,
@@ -1119,7 +1067,6 @@ export const resetWorkspaceTemplate = async (req, res) => {
     }));
     const newFiles = await ProjectFile.insertMany(docs);
 
-    // 3. Create new commit
     const initialSha = crypto.randomBytes(20).toString("hex");
     await ProjectCommit.create({
       projectId: project._id,
@@ -1143,7 +1090,6 @@ export const resetWorkspaceTemplate = async (req, res) => {
       isGitHubCommit: false,
     });
 
-    // 4. Update project model
     project.template = template;
     await project.save();
 

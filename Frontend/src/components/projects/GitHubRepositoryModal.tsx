@@ -160,7 +160,6 @@ function GitHubRepositoryModal({
   return (
     <div className="fixed inset-0 z-50 flex items-center justify-center bg-slate-900/40 backdrop-blur-sm p-3 sm:p-4 animate-in fade-in">
       <div className="w-full max-w-2xl max-h-[90vh] bg-white rounded-2xl shadow-xl border border-slate-200 flex flex-col overflow-hidden">
-        {/* Modal Header */}
         <div className="flex items-center justify-between p-4 sm:p-6 border-b border-slate-200">
           <div>
             <h3 className="text-lg sm:text-xl font-bold text-slate-900">
@@ -180,7 +179,6 @@ function GitHubRepositoryModal({
           </button>
         </div>
 
-        {/* Search input */}
         <div className="p-3.5 sm:p-4 border-b border-slate-100 bg-slate-50/50">
           <input
             type="text"
@@ -192,7 +190,6 @@ function GitHubRepositoryModal({
           />
         </div>
 
-        {/* Repositories list */}
         <div className="flex-1 overflow-y-auto p-4 sm:p-6">
           {loading ? (
             <div className="py-12 text-center">
@@ -283,7 +280,6 @@ function GitHubRepositoryModal({
           )}
         </div>
 
-        {/* Modal Footer */}
         <div className="flex justify-between items-center gap-3 p-4 sm:p-6 border-t border-slate-200 bg-slate-50/50">
           <p className="text-xs text-slate-500 font-medium">
             {filteredRepositories.length}{" "}

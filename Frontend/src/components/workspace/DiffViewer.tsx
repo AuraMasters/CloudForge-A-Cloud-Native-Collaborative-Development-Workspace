@@ -23,7 +23,6 @@ export const DiffViewer: React.FC<DiffViewerProps> = ({
 }) => {
   const [viewType, setViewType] = useState<"unified" | "split">("unified");
 
-  // Compute unified diff lines
   const diffLines = useMemo(() => {
     if (patch) {
       return patch.split("\n").map((line, idx) => {
@@ -63,7 +62,6 @@ export const DiffViewer: React.FC<DiffViewerProps> = ({
 
   return (
     <div className="h-full flex flex-col bg-white text-slate-900 select-none overflow-hidden font-mono text-xs">
-      {/* Diff Header */}
       <div className="h-10 px-4 bg-slate-100 border-b border-slate-200 flex items-center justify-between">
         <div className="flex items-center gap-2 min-w-0">
           <FileIcon name={filename} type="file" className="w-4 h-4 shrink-0" />
@@ -81,7 +79,6 @@ export const DiffViewer: React.FC<DiffViewerProps> = ({
           </div>
         </div>
 
-        {/* View Toggle and Close */}
         <div className="flex items-center gap-2">
           {onStageChange && (
             <button
@@ -128,7 +125,6 @@ export const DiffViewer: React.FC<DiffViewerProps> = ({
         </div>
       </div>
 
-      {/* Diff Content */}
       <div className="flex-1 overflow-auto p-2 bg-white font-mono text-xs leading-5">
         {diffLines.map((item) => {
           if (item.type === "header") {

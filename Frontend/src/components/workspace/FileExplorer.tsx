@@ -60,7 +60,6 @@ export const FileExplorer: React.FC<FileExplorerProps> = ({
 
   const fileInputRef = useRef<HTMLInputElement>(null);
 
-  // Build hierarchical tree structure from flat files
   const fileTree = useMemo(() => {
     const root: FileTreeNode[] = [];
     const map: { [path: string]: FileTreeNode } = {};
@@ -170,7 +169,6 @@ export const FileExplorer: React.FC<FileExplorerProps> = ({
     }
   };
 
-  // Handle local file uploads
   const handleFileUpload = async (e: React.ChangeEvent<HTMLInputElement>) => {
     const uploadedFiles = e.target.files;
     if (!uploadedFiles || uploadedFiles.length === 0 || !onUploadFiles) return;
@@ -191,7 +189,6 @@ export const FileExplorer: React.FC<FileExplorerProps> = ({
     if (fileInputRef.current) fileInputRef.current.value = "";
   };
 
-  // Filter files if searching
   const filteredFiles = useMemo(() => {
     if (!searchQuery.trim()) return null;
     const query = searchQuery.toLowerCase();
@@ -203,7 +200,6 @@ export const FileExplorer: React.FC<FileExplorerProps> = ({
     );
   }, [files, searchQuery]);
 
-  // Render tree node recursively
   const renderNode = (node: FileTreeNode, depth = 0) => {
     if (!node) return null;
     const isFolder = node.type === "directory";
@@ -267,7 +263,6 @@ export const FileExplorer: React.FC<FileExplorerProps> = ({
             )}
           </div>
 
-          {/* Hover Actions */}
           {!isRenaming && (
             <div
               className="hidden group-hover:flex items-center gap-1 text-slate-500"
@@ -323,7 +318,6 @@ export const FileExplorer: React.FC<FileExplorerProps> = ({
           )}
         </div>
 
-        {/* Children for directory */}
         {isFolder && !isCollapsed && (
           <div>
             {creatingType && creatingParentPath === node.path && (
@@ -364,7 +358,6 @@ export const FileExplorer: React.FC<FileExplorerProps> = ({
 
   return (
     <div className="h-full flex flex-col bg-slate-50/70 text-slate-700 select-none overflow-hidden border-r border-slate-200">
-      {/* Hidden file upload input */}
       <input
         ref={fileInputRef}
         type="file"
@@ -373,13 +366,11 @@ export const FileExplorer: React.FC<FileExplorerProps> = ({
         className="hidden"
       />
 
-      {/* Header */}
       <div className="px-3 py-2.5 flex items-center justify-between border-b border-slate-200 bg-white/60">
         <span className="text-[11px] font-bold tracking-wider uppercase text-slate-500">
           Explorer
         </span>
 
-        {/* Action icons */}
         <div className="flex items-center gap-1">
           <button
             onClick={() => handleStartCreate("file", "")}
@@ -423,7 +414,6 @@ export const FileExplorer: React.FC<FileExplorerProps> = ({
         </div>
       </div>
 
-      {/* Project Folder Bar */}
       <div className="px-3 py-1.5 flex items-center justify-between text-[11px] font-bold text-slate-600 uppercase tracking-wider bg-slate-100/60 border-b border-slate-200">
         <span className="truncate">{projectName}</span>
         <button
@@ -437,7 +427,6 @@ export const FileExplorer: React.FC<FileExplorerProps> = ({
         </button>
       </div>
 
-      {/* Search/Filter Bar */}
       {showSearch && (
         <div className="p-2 border-b border-slate-200 bg-white flex items-center gap-1.5">
           <input
@@ -458,9 +447,7 @@ export const FileExplorer: React.FC<FileExplorerProps> = ({
         </div>
       )}
 
-      {/* Tree Content */}
       <div className="flex-1 overflow-y-auto p-1.5 space-y-0.5 font-mono text-xs">
-        {/* Search results view */}
         {filteredFiles ? (
           <div>
             <p className="px-2 py-1 text-[11px] text-slate-500">
@@ -485,9 +472,7 @@ export const FileExplorer: React.FC<FileExplorerProps> = ({
             ))}
           </div>
         ) : (
-          /* Normal tree view */
           <div>
-            {/* Inline creation at root level */}
             {creatingType && creatingParentPath === "" && (
               <form
                 onSubmit={handleFinishCreate}

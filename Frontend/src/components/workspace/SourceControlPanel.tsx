@@ -118,7 +118,6 @@ export const SourceControlPanel: React.FC<SourceControlPanelProps> = ({
 
   return (
     <div className="h-full flex flex-col bg-slate-50/70 text-slate-800 select-none overflow-hidden border-r border-slate-200">
-      {/* Header Bar */}
       <div className="px-3 py-2.5 flex items-center justify-between border-b border-slate-200 bg-white/60">
         <div className="flex items-center gap-2">
           <span className="text-[11px] font-bold tracking-wider uppercase text-slate-500">
@@ -129,7 +128,6 @@ export const SourceControlPanel: React.FC<SourceControlPanelProps> = ({
           </span>
         </div>
 
-        {/* View mode toggle */}
         <div className="flex items-center bg-slate-200/80 p-0.5 rounded-lg text-xs">
           <button
             onClick={() => setViewMode("changes")}
@@ -154,9 +152,7 @@ export const SourceControlPanel: React.FC<SourceControlPanelProps> = ({
         </div>
       </div>
 
-      {/* Branch & Remote Banner */}
       <div className="p-3 bg-white/80 border-b border-slate-200 space-y-2">
-        {/* Branch Switcher */}
         <div className="relative">
           <button
             onClick={() => setShowBranchDropdown(!showBranchDropdown)}
@@ -171,7 +167,6 @@ export const SourceControlPanel: React.FC<SourceControlPanelProps> = ({
             <ChevronDown className="w-3.5 h-3.5 text-slate-400 shrink-0" />
           </button>
 
-          {/* Branch Dropdown */}
           {showBranchDropdown && (
             <div className="absolute top-full left-0 right-0 mt-1 z-30 bg-white border border-slate-200 rounded-xl shadow-xl overflow-hidden p-1.5">
               <div className="text-[10px] font-bold text-slate-400 uppercase px-2 py-1">
@@ -197,7 +192,6 @@ export const SourceControlPanel: React.FC<SourceControlPanelProps> = ({
                 ))}
               </div>
 
-              {/* Create new branch */}
               <div className="mt-1 pt-1 border-t border-slate-100">
                 {showNewBranchInput ? (
                   <form onSubmit={handleCreateBranch} className="p-1 space-y-1">
@@ -239,7 +233,6 @@ export const SourceControlPanel: React.FC<SourceControlPanelProps> = ({
           )}
         </div>
 
-        {/* GitHub Link / Sync Banner */}
         {isGitHubLinked ? (
           <div className="p-2 rounded-lg bg-blue-50/80 border border-blue-100 flex items-center justify-between text-xs">
             <div className="flex items-center gap-2 min-w-0">
@@ -279,10 +272,8 @@ export const SourceControlPanel: React.FC<SourceControlPanelProps> = ({
         )}
       </div>
 
-      {/* Main Content: Changes View or History View */}
       {viewMode === "changes" ? (
         <div className="flex-1 flex flex-col min-h-0 overflow-hidden">
-          {/* Commit Message Box */}
           <div className="p-3 border-b border-slate-200 bg-white/60 space-y-2">
             <textarea
               value={commitMessage}
@@ -322,7 +313,6 @@ export const SourceControlPanel: React.FC<SourceControlPanelProps> = ({
             </button>
           </div>
 
-          {/* Staged & Unstaged Changes Tree */}
           <div className="flex-1 overflow-y-auto p-2 space-y-3 font-mono text-xs">
             {changedFiles.length === 0 ? (
               <div className="py-12 text-center text-slate-400 text-xs">
@@ -334,7 +324,6 @@ export const SourceControlPanel: React.FC<SourceControlPanelProps> = ({
               </div>
             ) : (
               <>
-                {/* Staged Changes Accordion */}
                 {stagedChanges.length > 0 && (
                   <div>
                     <div
@@ -416,7 +405,6 @@ export const SourceControlPanel: React.FC<SourceControlPanelProps> = ({
                   </div>
                 )}
 
-                {/* Unstaged Changes Accordion */}
                 <div>
                   <div
                     onClick={() => setIsChangesCollapsed(!isChangesCollapsed)}
@@ -523,9 +511,7 @@ export const SourceControlPanel: React.FC<SourceControlPanelProps> = ({
           </div>
         </div>
       ) : (
-        /* Commits Timeline History View (Light Theme) */
         <div className="flex-1 flex flex-col overflow-hidden font-sans text-xs">
-          {/* Commit Search Bar */}
           <div className="p-2 border-b border-slate-200 bg-white">
             <div className="relative flex items-center">
               <input
@@ -557,14 +543,12 @@ export const SourceControlPanel: React.FC<SourceControlPanelProps> = ({
                       onClick={() => onSelectCommit(commit)}
                       className="relative group p-2.5 rounded-xl bg-white border border-slate-200 hover:border-blue-400 hover:shadow-sm cursor-pointer transition-all space-y-1.5 shadow-2xs"
                     >
-                      {/* Node Dot */}
                       <div
                         className={`absolute -left-[19px] top-3.5 w-2.5 h-2.5 rounded-full border-2 border-white ${
                           isHead ? "bg-blue-600 ring-2 ring-blue-100" : "bg-slate-400"
                         }`}
                       />
 
-                      {/* Commit Message & Badges */}
                       <div className="flex items-start justify-between gap-2">
                         <p className="font-semibold text-slate-900 text-xs line-clamp-2">
                           {commit.message}
@@ -577,7 +561,6 @@ export const SourceControlPanel: React.FC<SourceControlPanelProps> = ({
                         )}
                       </div>
 
-                      {/* Commit Meta */}
                       <div className="flex items-center justify-between text-[11px] text-slate-500 font-mono">
                         <div className="flex items-center gap-1.5 truncate max-w-[130px]">
                           {commit.author?.avatarUrl ? (
@@ -601,7 +584,6 @@ export const SourceControlPanel: React.FC<SourceControlPanelProps> = ({
                         </span>
                       </div>
 
-                      {/* Date */}
                       <div className="text-[10px] text-slate-400">
                         {new Date(commit.createdAt).toLocaleString(undefined, {
                           month: "short",

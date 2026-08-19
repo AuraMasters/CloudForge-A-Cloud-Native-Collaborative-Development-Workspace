@@ -13,48 +13,16 @@ dotenv.config();
 
 const app = express();
 
-// Trust reverse proxy (Render, Heroku, AWS ELB, Cloudflare)
-app.set("trust proxy", 1);
-
-// Flexible cross-origin resource sharing for Vercel + Local development
-const clientUrl = (process.env.CLIENT_URL || "").replace(/\/$/, "");
-const allowedOrigins = [
-  clientUrl,
-  "http://localhost:5173",
-  "http://localhost:3000",
-  "http://127.0.0.1:5173",
-  "http://127.0.0.1:3000",
-].filter(Boolean);
-
 app.use(
   cors({
-    origin: (origin, callback) => {
-      // Allow requests with no origin (e.g. mobile apps, curl, server-to-server)
-      if (!origin) return callback(null, true);
-
-      const cleanOrigin = origin.replace(/\/$/, "");
-      if (
-        allowedOrigins.includes(cleanOrigin) ||
-        cleanOrigin.endsWith(".vercel.app") ||
-        cleanOrigin.endsWith(".onrender.com")
-      ) {
-        return callback(null, true);
-      }
-
-      // Permissive fallback so any Vercel preview domain can connect
-      return callback(null, true);
-    },
+    origin: process.env.CLIENT_URL,
     credentials: true,
-    methods: ["GET", "POST", "PUT", "DELETE", "OPTIONS", "PATCH"],
-    allowedHeaders: ["Content-Type", "Authorization", "X-Requested-With", "Accept"],
   })
 );
 
-app.use(express.json({ limit: "50mb" }));
-app.use(express.urlencoded({ extended: true, limit: "50mb" }));
+app.use(express.json());
 app.use(cookieParser());
 
-// Root & Health Check Endpoints
 app.get("/", (req, res) => {
   res.json({
     status: "ok",
@@ -73,7 +41,6 @@ app.get("/health", (req, res) => {
   });
 });
 
-// API Routes
 app.use("/api/auth", authRoutes);
 app.use("/api/projects", projectRoutes);
 app.use("/api/github", githubRoutes);

@@ -41,7 +41,6 @@ function Navbar({ user }: NavbarProps) {
   return (
     <header className="sticky top-0 z-50 border-b border-slate-200 bg-white/90 backdrop-blur-md">
       <div className="mx-auto flex h-16 max-w-7xl items-center justify-between px-4 sm:px-6 lg:px-8">
-        {/* Brand & Desktop Links */}
         <div className="flex items-center gap-6 sm:gap-8">
           <button
             onClick={() => navigate("/dashboard")}
@@ -55,7 +54,6 @@ function Navbar({ user }: NavbarProps) {
             </span>
           </button>
 
-          {/* Desktop Navigation Links */}
           <nav className="hidden md:flex items-center gap-1">
             {navLinks.map((link) => {
               const isActive = location.pathname === link.path;
@@ -77,9 +75,7 @@ function Navbar({ user }: NavbarProps) {
           </nav>
         </div>
 
-        {/* Right side items */}
         <div className="flex items-center gap-2 sm:gap-3">
-          {/* Quick GitHub button for desktop/tablet */}
           <button
             onClick={() => navigate("/github")}
             className="hidden sm:flex items-center gap-2 px-3 py-1.5 text-xs font-semibold rounded-lg border border-slate-200 bg-white text-slate-700 hover:bg-slate-50 hover:text-slate-900 transition-all shadow-2xs"
@@ -89,7 +85,6 @@ function Navbar({ user }: NavbarProps) {
             <span>GitHub</span>
           </button>
 
-          {/* User info */}
           <div className="hidden lg:block text-right">
             <p className="text-xs font-bold text-slate-900 max-w-[150px] truncate">
               {user?.name || "User"}
@@ -99,7 +94,6 @@ function Navbar({ user }: NavbarProps) {
             </p>
           </div>
 
-          {/* User Avatar */}
           <div
             className="flex h-9 w-9 items-center justify-center rounded-xl bg-blue-50 border border-blue-100 text-blue-600 text-xs font-bold uppercase shrink-0 shadow-2xs"
             title={user?.name || "User Account"}
@@ -107,7 +101,6 @@ function Navbar({ user }: NavbarProps) {
             {user?.name?.charAt(0) || "U"}
           </div>
 
-          {/* Desktop Sign Out Button */}
           <button
             onClick={handleLogout}
             className="hidden sm:flex items-center gap-1.5 px-3 py-1.5 text-xs font-semibold rounded-lg bg-white border border-slate-200 text-slate-700 hover:bg-red-50 hover:border-red-200 hover:text-red-600 transition-all shadow-2xs"
@@ -116,7 +109,6 @@ function Navbar({ user }: NavbarProps) {
             <span>Sign out</span>
           </button>
 
-          {/* Mobile Hamburger Menu Toggle */}
           <button
             type="button"
             onClick={() => setMobileMenuOpen(!mobileMenuOpen)}
@@ -128,10 +120,8 @@ function Navbar({ user }: NavbarProps) {
         </div>
       </div>
 
-      {/* Mobile Drawer Menu */}
       {mobileMenuOpen && (
         <div className="md:hidden border-t border-slate-200 bg-white px-4 pt-3 pb-4 shadow-lg animate-in slide-in-from-top-2">
-          {/* User Profile summary on mobile */}
           <div className="flex items-center gap-3 p-3 rounded-xl bg-slate-50 border border-slate-100 mb-3">
             <div className="flex h-10 w-10 items-center justify-center rounded-xl bg-blue-600 text-white font-bold text-sm">
               {user?.name?.charAt(0) || "U"}
@@ -146,7 +136,6 @@ function Navbar({ user }: NavbarProps) {
             </div>
           </div>
 
-          {/* Navigation links on mobile */}
           <div className="space-y-1">
             {navLinks.map((link) => {
               const isActive = location.pathname === link.path;

@@ -35,7 +35,6 @@ export const CommitDetailsModal: React.FC<CommitDetailsModalProps> = ({
   return (
     <div className="fixed inset-0 z-50 flex items-center justify-center bg-slate-900/40 backdrop-blur-xs p-3 sm:p-4 animate-in fade-in">
       <div className="w-full max-w-3xl max-h-[90vh] bg-white border border-slate-200 rounded-2xl shadow-2xl overflow-hidden flex flex-col text-slate-900">
-        {/* Header */}
         <div className="p-4 sm:p-6 border-b border-slate-200 flex items-start justify-between gap-3">
           <div className="flex items-start gap-3 min-w-0">
             <div className="w-9 h-9 sm:w-10 sm:h-10 rounded-xl bg-blue-50 border border-blue-100 flex items-center justify-center text-blue-600 shrink-0">
@@ -69,7 +68,6 @@ export const CommitDetailsModal: React.FC<CommitDetailsModalProps> = ({
           </button>
         </div>
 
-        {/* Author & Stats bar */}
         <div className="px-4 sm:px-6 py-2.5 sm:py-3 bg-slate-50 border-b border-slate-200 flex flex-col sm:flex-row sm:items-center sm:justify-between gap-2 text-xs font-mono">
           <div className="flex items-center gap-2 min-w-0">
             {commit.author?.avatarUrl ? (
@@ -115,7 +113,6 @@ export const CommitDetailsModal: React.FC<CommitDetailsModalProps> = ({
           </div>
         </div>
 
-        {/* Changes and Patches */}
         <div className="flex-1 overflow-y-auto p-6 space-y-4 font-mono text-xs bg-slate-50/50">
           {commit.changes && commit.changes.length > 0 ? (
             commit.changes.map((change, idx) => (
@@ -123,7 +120,6 @@ export const CommitDetailsModal: React.FC<CommitDetailsModalProps> = ({
                 key={idx}
                 className="rounded-xl border border-slate-200 bg-white overflow-hidden shadow-2xs"
               >
-                {/* File change header */}
                 <div className="px-4 py-2 bg-slate-100/70 border-b border-slate-200 flex items-center justify-between">
                   <div className="flex items-center gap-2">
                     <FileIcon
@@ -153,7 +149,6 @@ export const CommitDetailsModal: React.FC<CommitDetailsModalProps> = ({
                   </div>
                 </div>
 
-                {/* Diff patch view */}
                 {change.patch ? (
                   <div className="p-3 overflow-x-auto text-[11px] leading-5 space-y-0.5 max-h-60 overflow-y-auto bg-white">
                     {change.patch.split("\n").map((line, lIdx) => {
@@ -194,7 +189,6 @@ export const CommitDetailsModal: React.FC<CommitDetailsModalProps> = ({
           )}
         </div>
 
-        {/* Footer */}
         <div className="p-4 border-t border-slate-200 flex justify-end bg-white">
           <button
             onClick={onClose}

@@ -77,14 +77,12 @@ export const SearchPanel: React.FC<SearchPanelProps> = ({
 
   return (
     <div className="h-full flex flex-col bg-slate-50/70 text-slate-800 select-none overflow-hidden font-sans border-r border-slate-200">
-      {/* Header */}
       <div className="px-3 py-2.5 border-b border-slate-200 bg-white/60">
         <span className="text-[11px] font-bold tracking-wider uppercase text-slate-500">
           Search
         </span>
       </div>
 
-      {/* Search Controls */}
       <div className="p-3 border-b border-slate-200 bg-white/80 space-y-2">
         <div className="relative flex items-center">
           <input
@@ -96,7 +94,6 @@ export const SearchPanel: React.FC<SearchPanelProps> = ({
           />
           <Search className="w-3.5 h-3.5 text-slate-400 absolute left-2" />
 
-          {/* Toggle match case */}
           <div className="absolute right-1.5 flex items-center gap-1">
             <button
               onClick={() => setMatchCase(!matchCase)}
@@ -120,7 +117,6 @@ export const SearchPanel: React.FC<SearchPanelProps> = ({
         )}
       </div>
 
-      {/* Results List */}
       <div className="flex-1 overflow-y-auto p-2 space-y-2 font-mono text-xs">
         {!query.trim() ? (
           <div className="py-12 text-center text-slate-400 text-xs">

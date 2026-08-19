@@ -115,7 +115,6 @@ function Projects() {
     <div className="min-h-screen bg-slate-50 text-slate-900 font-sans">
       <Navbar user={user} />
       <main className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-6 sm:py-8">
-        {/* Header Bar */}
         <section className="mb-6 sm:mb-8">
           <button
             onClick={() => navigate("/dashboard")}
@@ -155,7 +154,6 @@ function Projects() {
           </div>
         </section>
 
-        {/* Search and Filters Bar */}
         <section className="bg-white border border-slate-200/80 rounded-2xl p-3 sm:p-4 mb-6 shadow-2xs">
           <div className="flex flex-col sm:flex-row gap-2.5 sm:gap-3">
             <div className="relative flex-1">
@@ -173,7 +171,6 @@ function Projects() {
           </div>
         </section>
 
-        {/* Project List / Grid */}
         {projects.length === 0 ? (
           <EmptyState
             title="No projects yet"
