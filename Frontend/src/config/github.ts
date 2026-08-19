@@ -19,7 +19,6 @@ export const githubApi = {
           return;
         }
       }
-      // Fallback to direct navigation
       window.location.href = `${API_URL}/api/github/connect?clientUrl=${encodeURIComponent(clientOrigin)}`;
     } catch {
       window.location.href = `${API_URL}/api/github/connect`;

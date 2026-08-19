@@ -35,7 +35,6 @@ export const GitHubRemoteModal: React.FC<GitHubRemoteModalProps> = ({
   const { showError, showSuccess } = useAlert();
   const [tab, setTab] = useState<"publish" | "link">("publish");
 
-  // Publish Form State
   const [publishName, setPublishName] = useState(
     project.name.toLowerCase().replace(/\s+/g, "-")
   );
@@ -44,7 +43,6 @@ export const GitHubRemoteModal: React.FC<GitHubRemoteModalProps> = ({
   );
   const [isPrivate, setIsPrivate] = useState(false);
 
-  // Link Form State
   const [repoUrl, setRepoUrl] = useState("");
   const [userRepos, setUserRepos] = useState<GitHubRepository[]>([]);
   const [selectedRepoFullName, setSelectedRepoFullName] = useState("");
@@ -56,7 +54,6 @@ export const GitHubRemoteModal: React.FC<GitHubRemoteModalProps> = ({
       setPublishName(project.name.toLowerCase().replace(/\s+/g, "-"));
       setPublishDescription(project.description || "");
 
-      // Load user GitHub repos if connected
       const loadRepos = async () => {
         try {
           const data = await githubApi.getRepositories();
@@ -117,7 +114,6 @@ export const GitHubRemoteModal: React.FC<GitHubRemoteModalProps> = ({
   return (
     <div className="fixed inset-0 z-50 flex items-center justify-center bg-slate-900/40 backdrop-blur-xs p-3 sm:p-4 animate-in fade-in">
       <div className="w-full max-w-lg max-h-[90vh] bg-white border border-slate-200 rounded-2xl shadow-2xl overflow-hidden flex flex-col text-slate-900">
-        {/* Modal Header */}
         <div className="p-4 sm:p-6 border-b border-slate-200 flex items-center justify-between">
           <div className="flex items-center gap-3">
             <div className="w-9 h-9 sm:w-10 sm:h-10 rounded-xl bg-slate-100 flex items-center justify-center text-slate-900 shrink-0">
@@ -141,7 +137,6 @@ export const GitHubRemoteModal: React.FC<GitHubRemoteModalProps> = ({
           </button>
         </div>
 
-        {/* Tab Selection */}
         <div className="flex border-b border-slate-200 bg-slate-50 p-1.5 gap-1 text-xs">
           <button
             type="button"
@@ -169,7 +164,6 @@ export const GitHubRemoteModal: React.FC<GitHubRemoteModalProps> = ({
           </button>
         </div>
 
-        {/* Tab 1: Publish Form */}
         {tab === "publish" ? (
           <form onSubmit={handlePublish} className="p-6 space-y-4 text-xs">
             <div>
@@ -200,7 +194,6 @@ export const GitHubRemoteModal: React.FC<GitHubRemoteModalProps> = ({
               />
             </div>
 
-            {/* Visibility Toggle */}
             <div className="space-y-2">
               <label className="block text-slate-700 font-semibold">
                 Visibility
@@ -269,7 +262,6 @@ export const GitHubRemoteModal: React.FC<GitHubRemoteModalProps> = ({
             </div>
           </form>
         ) : (
-          /* Tab 2: Link Form */
           <form onSubmit={handleLink} className="p-6 space-y-4 text-xs">
             <div>
               <label className="block text-slate-700 font-semibold mb-1.5">
@@ -288,7 +280,6 @@ export const GitHubRemoteModal: React.FC<GitHubRemoteModalProps> = ({
               />
             </div>
 
-            {/* List of user's GitHub Repos */}
             {userRepos.length > 0 && (
               <div>
                 <label className="block text-slate-700 font-semibold mb-1.5">

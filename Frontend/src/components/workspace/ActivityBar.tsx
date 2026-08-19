@@ -42,7 +42,6 @@ export const ActivityBar: React.FC<ActivityBarProps> = ({
 
   return (
     <aside className="w-12 bg-white border-r border-slate-200 flex flex-col justify-between items-center py-2 shrink-0 select-none z-10">
-      {/* Top tabs */}
       <div className="flex flex-col items-center gap-1 w-full">
         {topItems.map((item) => {
           const isActive = activeTab === item.id;
@@ -59,7 +58,6 @@ export const ActivityBar: React.FC<ActivityBarProps> = ({
             >
               {item.icon}
 
-              {/* Badge Counter */}
               {item.badge !== undefined && (
                 <span className="absolute top-1 right-1 px-1.5 py-0.2 bg-blue-600 text-white font-bold text-[9px] rounded-full min-w-[15px] h-[15px] flex items-center justify-center shadow-xs">
                   {item.badge > 99 ? "99+" : item.badge}
@@ -70,7 +68,6 @@ export const ActivityBar: React.FC<ActivityBarProps> = ({
         })}
       </div>
 
-      {/* Bottom Icons */}
       <div className="flex flex-col items-center gap-1 w-full">
         <button
           onClick={() => onChangeTab("settings")}

@@ -5,12 +5,10 @@ export const protect = async (req, res, next) => {
   try {
     let token = req.cookies?.token;
 
-    // Check Authorization header (Bearer token)
     if (!token && req.headers.authorization && req.headers.authorization.startsWith("Bearer ")) {
       token = req.headers.authorization.split(" ")[1];
     }
 
-    // Check query parameter fallback (e.g. for direct redirects or downloads)
     if (!token && req.query?.token) {
       token = req.query.token;
     }

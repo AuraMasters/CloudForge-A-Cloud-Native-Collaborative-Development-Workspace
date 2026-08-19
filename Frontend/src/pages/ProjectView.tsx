@@ -12,7 +12,6 @@ import {
   type ActivityBarTab,
 } from "../types/workspace";
 
-// Workspace Components
 import { WorkspaceNavbar } from "../components/workspace/WorkspaceNavbar";
 import { ActivityBar } from "../components/workspace/ActivityBar";
 import { FileExplorer } from "../components/workspace/FileExplorer";
@@ -30,7 +29,6 @@ export default function ProjectView() {
   const { id } = useParams<{ id: string }>();
   const { showError, showSuccess } = useAlert();
 
-  // Core Data States
   const [project, setProject] = useState<Project | null>(null);
   const [files, setFiles] = useState<WorkspaceFile[]>([]);
   const [commits, setCommits] = useState<GitCommit[]>([]);
@@ -38,18 +36,15 @@ export default function ProjectView() {
   const [branches, setBranches] = useState<string[]>(["main"]);
   const [loading, setLoading] = useState(true);
 
-  // Editor Tabs & Selection
   const [tabs, setTabs] = useState<EditorTab[]>([]);
   const [activeTabId, setActiveTabId] = useState<string | null>(null);
   const [isSaving, setIsSaving] = useState(false);
 
-  // Layout & Navigation States
   const [activeActivityTab, setActiveActivityTab] =
     useState<ActivityBarTab>("explorer");
   const [isBottomPanelOpen, setIsBottomPanelOpen] = useState(false);
   const [isMobileSidebarOpen, setIsMobileSidebarOpen] = useState(false);
 
-  // Working Tree Changes (Staging Area)
   const [changedFiles, setChangedFiles] = useState<
     {
       file: WorkspaceFile;
@@ -58,7 +53,6 @@ export default function ProjectView() {
     }[]
   >([]);
 
-  // Modals & Diff Target
   const [isGitHubModalOpen, setIsGitHubModalOpen] = useState(false);
   const [selectedCommit, setSelectedCommit] = useState<GitCommit | null>(null);
   const [diffTarget, setDiffTarget] = useState<{
@@ -71,7 +65,6 @@ export default function ProjectView() {
 
   const [isSyncing, setIsSyncing] = useState(false);
 
-  // Load project details & workspace files in one unified API request
   const loadWorkspace = useCallback(async () => {
     if (!id) return;
     try {
@@ -99,7 +92,6 @@ export default function ProjectView() {
     loadWorkspace();
   }, [loadWorkspace]);
 
-  // Open first file on initial load if no tabs are open
   useEffect(() => {
     if (files.length > 0 && tabs.length === 0) {
       const firstCodeFile = files.find(
@@ -122,13 +114,11 @@ export default function ProjectView() {
     }
   }, [files]);
 
-  // Handle Tab Selection & File Opening
   const handleSelectFile = (file: WorkspaceFile) => {
     if (file.type === "directory") return;
 
     setDiffTarget(null);
 
-    // Auto close mobile sidebar when file is opened
     if (typeof window !== "undefined" && window.innerWidth < 768) {
       setIsMobileSidebarOpen(false);
     }
@@ -151,7 +141,6 @@ export default function ProjectView() {
     }
   };
 
-  // Close Tab
   const handleCloseTab = (fileId: string) => {
     setTabs((prev) => {
       const nextTabs = prev.filter((t) => t.fileId !== fileId);
@@ -164,7 +153,6 @@ export default function ProjectView() {
     });
   };
 
-  // Handle Content Edit in Editor
   const handleContentChange = (fileId: string, newContent: string) => {
     setTabs((prev) =>
       prev.map((tab) => {
@@ -180,7 +168,6 @@ export default function ProjectView() {
       })
     );
 
-    // Track working tree changes
     const targetFile = files.find((f) => f._id === fileId);
     if (targetFile) {
       setChangedFiles((prev) => {
@@ -218,7 +205,6 @@ export default function ProjectView() {
     }
   };
 
-  // Save File to Backend
   const handleSaveFile = async (fileId: string) => {
     const tab = tabs.find((t) => t.fileId === fileId);
     if (!tab) return;
@@ -240,7 +226,6 @@ export default function ProjectView() {
         throw new Error(data.message || "Failed to save file");
       }
 
-      // Update Tab state
       setTabs((prev) =>
         prev.map((t) =>
           t.fileId === fileId
@@ -249,7 +234,6 @@ export default function ProjectView() {
         )
       );
 
-      // Update workspace files cache
       setFiles((prev) =>
         prev.map((f) => (f._id === fileId ? { ...f, content: tab.content } : f))
       );
@@ -262,7 +246,6 @@ export default function ProjectView() {
     }
   };
 
-  // File Creation
   const handleCreateFile = async (name: string, path: string) => {
     try {
       const res = await fetch(`${API_URL}/api/projects/${id}/files`, {
@@ -301,7 +284,6 @@ export default function ProjectView() {
     }
   };
 
-  // Folder Creation
   const handleCreateFolder = async (name: string, path: string) => {
     try {
       const res = await fetch(`${API_URL}/api/projects/${id}/files`, {
@@ -327,7 +309,6 @@ export default function ProjectView() {
     }
   };
 
-  // Multi-File Upload from local computer
   const handleUploadFiles = async (
     uploaded: { name: string; path: string; content: string }[]
   ) => {
@@ -355,7 +336,6 @@ export default function ProjectView() {
     }
   };
 
-  // Download individual file
   const handleDownloadFile = (file: WorkspaceFile) => {
     const blob = new Blob([file.content || ""], {
       type: "text/plain;charset=utf-8",
@@ -370,7 +350,6 @@ export default function ProjectView() {
     URL.revokeObjectURL(url);
   };
 
-  // Download entire workspace as a ZIP archive
   const handleDownloadZip = async () => {
     if (!project || files.length === 0) return;
 
@@ -401,7 +380,6 @@ export default function ProjectView() {
     }
   };
 
-  // Rename File
   const handleRenameFile = async (fileId: string, newName: string) => {
     try {
       const res = await fetch(
@@ -441,7 +419,6 @@ export default function ProjectView() {
     }
   };
 
-  // Delete File
   const handleDeleteFile = async (fileId: string) => {
     const file = files.find((f) => f._id === fileId);
     if (!file) return;
@@ -472,7 +449,6 @@ export default function ProjectView() {
     }
   };
 
-  // Staging / Unstaging Actions
   const handleStageFile = (fileId: string) => {
     setChangedFiles((prev) =>
       prev.map((c) => (c.file._id === fileId ? { ...c, staged: true } : c))
@@ -529,7 +505,6 @@ export default function ProjectView() {
     showSuccess("Workspace reverted to clean working tree");
   };
 
-  // Inspect Diff for a changed file
   const handleInspectDiff = (file: WorkspaceFile) => {
     const tab = tabs.find((t) => t.fileId === file._id);
     const modifiedContent = tab ? tab.content : file.content;
@@ -544,7 +519,6 @@ export default function ProjectView() {
     });
   };
 
-  // Git Commit Action
   const handleCommit = async (message: string, stagedOnly: boolean) => {
     if (!message.trim()) return;
 
@@ -605,7 +579,6 @@ export default function ProjectView() {
     }
   };
 
-  // Branch Switching / Creation
   const handleSwitchBranch = async (branchName: string, createNew = false) => {
     try {
       const res = await fetch(
@@ -631,7 +604,6 @@ export default function ProjectView() {
     }
   };
 
-  // GitHub Remote Linking
   const handleLinkRepo = async (repoUrl: string) => {
     const res = await fetch(
       `${API_URL}/api/projects/${id}/git/link-github`,
@@ -652,7 +624,6 @@ export default function ProjectView() {
     loadWorkspace();
   };
 
-  // GitHub Remote Publishing
   const handlePublishRepo = async (
     name: string,
     description: string,
@@ -677,7 +648,6 @@ export default function ProjectView() {
     loadWorkspace();
   };
 
-  // Sync with GitHub Remote
   const handleSyncGitHub = async () => {
     try {
       setIsSyncing(true);
@@ -726,7 +696,6 @@ export default function ProjectView() {
 
   return (
     <div className="h-screen w-screen flex flex-col bg-slate-50 text-slate-900 overflow-hidden font-sans select-none relative">
-      {/* Top Navbar */}
       <WorkspaceNavbar
         project={project}
         isDirty={isAnyTabDirty || changedFiles.length > 0}
@@ -741,9 +710,7 @@ export default function ProjectView() {
         isMobileSidebarOpen={isMobileSidebarOpen}
       />
 
-      {/* Main Workspace Grid: Activity Bar | Primary Sidebar | Center Editor */}
       <div className="flex-1 flex overflow-hidden relative">
-        {/* Mobile Backdrop Overlay */}
         {isMobileSidebarOpen && (
           <div
             onClick={() => setIsMobileSidebarOpen(false)}
@@ -751,7 +718,6 @@ export default function ProjectView() {
           />
         )}
 
-        {/* Sidebar Container (Slide-out Drawer on Mobile, Static column on Desktop) */}
         <div
           className={`fixed md:relative top-13 sm:top-14 md:top-0 bottom-6 md:bottom-0 left-0 z-40 md:z-auto flex h-[calc(100vh-theme(spacing.13)-theme(spacing.6))] sm:h-[calc(100vh-theme(spacing.14)-theme(spacing.6))] md:h-full bg-white shadow-2xl md:shadow-none transition-transform duration-200 ease-in-out shrink-0 ${
             isMobileSidebarOpen
@@ -759,7 +725,6 @@ export default function ProjectView() {
               : "-translate-x-full md:translate-x-0"
           }`}
         >
-          {/* Left Activity Bar */}
           <ActivityBar
             activeTab={activeActivityTab}
             onChangeTab={(tab) => {
@@ -773,7 +738,6 @@ export default function ProjectView() {
             isGitHubConnected={isGitHubConnected}
           />
 
-          {/* Primary Sidebar Panel */}
           <div className="w-64 sm:w-72 md:w-80 h-full border-r border-slate-200 bg-slate-50/70 shrink-0 overflow-hidden flex flex-col">
             {activeActivityTab === "explorer" && (
               <FileExplorer
@@ -842,7 +806,6 @@ export default function ProjectView() {
           </div>
         </div>
 
-        {/* Center Area: Code Editor OR Diff Viewer */}
         <div className="flex-1 flex flex-col h-full overflow-hidden bg-white min-w-0">
           <div className="flex-1 overflow-hidden">
             {diffTarget ? (
@@ -871,7 +834,6 @@ export default function ProjectView() {
             )}
           </div>
 
-          {/* Bottom Panel (Collapsible Terminal / Git Output) */}
           <BottomPanel
             isOpen={isBottomPanelOpen}
             onClose={() => setIsBottomPanelOpen(false)}
@@ -882,7 +844,6 @@ export default function ProjectView() {
         </div>
       </div>
 
-      {/* Bottom Status Bar */}
       <StatusBar
         currentBranch={currentBranch}
         isGitHubConnected={isGitHubConnected}
@@ -900,7 +861,6 @@ export default function ProjectView() {
         isSyncing={isSyncing}
       />
 
-      {/* GitHub Remote Integration Modal */}
       <GitHubRemoteModal
         isOpen={isGitHubModalOpen}
         onClose={() => setIsGitHubModalOpen(false)}
@@ -909,7 +869,6 @@ export default function ProjectView() {
         onPublishRepo={handlePublishRepo}
       />
 
-      {/* Commit Diff Details Modal */}
       <CommitDetailsModal
         commit={selectedCommit}
         onClose={() => setSelectedCommit(null)}

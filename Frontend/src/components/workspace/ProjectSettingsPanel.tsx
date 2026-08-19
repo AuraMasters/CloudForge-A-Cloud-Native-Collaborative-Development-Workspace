@@ -187,7 +187,6 @@ export const ProjectSettingsPanel: React.FC<ProjectSettingsPanelProps> = ({
 
   return (
     <div className="h-full flex flex-col bg-slate-50/70 text-slate-800 select-none overflow-y-auto font-sans text-xs border-r border-slate-200">
-      {/* Header */}
       <div className="px-3 py-2.5 border-b border-slate-200 bg-white/60">
         <span className="text-[11px] font-bold tracking-wider uppercase text-slate-500">
           Project Settings
@@ -195,7 +194,6 @@ export const ProjectSettingsPanel: React.FC<ProjectSettingsPanelProps> = ({
       </div>
 
       <div className="p-4 space-y-4">
-        {/* Workspace Quick Overview */}
         <div className="grid grid-cols-2 gap-2">
           <div className="p-2.5 bg-white rounded-xl border border-slate-200 text-center shadow-2xs">
             <p className="text-[10px] text-slate-500 font-medium uppercase tracking-wider">
@@ -211,7 +209,6 @@ export const ProjectSettingsPanel: React.FC<ProjectSettingsPanelProps> = ({
           </div>
         </div>
 
-        {/* Basic Info Form */}
         <form onSubmit={handleSave} className="space-y-3 bg-white p-3.5 rounded-xl border border-slate-200 shadow-2xs">
           <div>
             <label className="block text-slate-700 font-semibold mb-1">
@@ -247,7 +244,6 @@ export const ProjectSettingsPanel: React.FC<ProjectSettingsPanelProps> = ({
           </button>
         </form>
 
-        {/* Interactive Template Preset Switcher */}
         <div className="bg-white p-3.5 rounded-xl border border-slate-200 shadow-2xs space-y-3">
           <div>
             <label className="block text-slate-700 font-semibold mb-1">
@@ -312,7 +308,6 @@ export const ProjectSettingsPanel: React.FC<ProjectSettingsPanelProps> = ({
           </button>
         </div>
 
-        {/* GitHub Remote Info */}
         <div className="p-3.5 rounded-xl bg-white border border-slate-200 space-y-2 shadow-2xs">
           <div className="flex items-center justify-between">
             <span className="font-semibold text-slate-800">GitHub Remote</span>
@@ -345,7 +340,6 @@ export const ProjectSettingsPanel: React.FC<ProjectSettingsPanelProps> = ({
           )}
         </div>
 
-        {/* Project Metadata */}
         <div className="p-3 rounded-xl bg-white border border-slate-200 space-y-2 text-[11px] text-slate-500 font-mono shadow-2xs">
           <div className="flex items-center justify-between">
             <span>Project ID:</span>
@@ -359,7 +353,6 @@ export const ProjectSettingsPanel: React.FC<ProjectSettingsPanelProps> = ({
           </div>
         </div>
 
-        {/* Danger Zone */}
         <div className="pt-2">
           <button
             type="button"

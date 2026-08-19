@@ -38,10 +38,8 @@ const GitHub = () => {
   const [error, setError] = useState("");
 
   useEffect(() => {
-    // Check if redirected from OAuth callback with query parameters
     const params = new URLSearchParams(window.location.search);
     if (params.get("connected") === "true") {
-      // Clear query params from URL cleanly without reload
       window.history.replaceState({}, document.title, window.location.pathname);
     } else if (params.get("connected") === "false") {
       const errCode = params.get("error");
@@ -113,7 +111,6 @@ const GitHub = () => {
       <Navbar user={user} />
 
       <main className="mx-auto max-w-7xl px-4 sm:px-6 lg:px-8 py-6 sm:py-10">
-        {/* Header */}
         <section className="mb-6 sm:mb-10">
           <div className="flex flex-col sm:flex-row sm:items-start sm:justify-between gap-4">
             <div>
@@ -145,16 +142,13 @@ const GitHub = () => {
           </div>
         </section>
 
-        {/* Error notification */}
         {error && (
           <div className="mb-6 rounded-xl border border-red-200 bg-red-50 p-4 text-xs sm:text-sm text-red-700 shadow-2xs">
             <p className="font-semibold">{error}</p>
           </div>
         )}
 
-        {/* Main Grid */}
         <section className="grid gap-6 grid-cols-1 lg:grid-cols-[1.5fr_1fr]">
-          {/* Connection Card */}
           <div className="rounded-2xl border border-slate-200/80 bg-white shadow-2xs">
             <div className="border-b border-slate-100 px-5 sm:px-6 py-4 sm:py-5">
               <div className="flex items-center justify-between">
@@ -202,7 +196,6 @@ const GitHub = () => {
                 </div>
               ) : (
                 <div>
-                  {/* Connected Account Bar */}
                   <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4">
                     <div className="flex items-center gap-3.5 min-w-0">
                       <div className="flex h-12 w-12 items-center justify-center rounded-2xl bg-slate-100 shrink-0">
@@ -241,7 +234,6 @@ const GitHub = () => {
 
                   <div className="my-5 sm:my-6 h-px bg-slate-100" />
 
-                  {/* Actions & Disconnect */}
                   <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-3">
                     <div>
                       <p className="text-xs sm:text-sm font-semibold text-slate-900">
@@ -271,7 +263,6 @@ const GitHub = () => {
             </div>
           </div>
 
-          {/* Integration Features Sidebar */}
           <div className="space-y-4 sm:space-y-6">
             <div className="rounded-2xl border border-slate-200/80 bg-white p-5 sm:p-6 shadow-2xs">
               <div className="mb-4 flex h-10 w-10 items-center justify-center rounded-xl bg-blue-50">

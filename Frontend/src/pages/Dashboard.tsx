@@ -64,7 +64,6 @@ function Dashboard() {
     <div className="min-h-screen bg-slate-50 text-slate-900 font-sans">
       <Navbar user={user} />
       <main className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-6 sm:py-8">
-        {/* Top Header */}
         <section className="mb-6 sm:mb-8">
           <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4">
             <div>
@@ -90,7 +89,6 @@ function Dashboard() {
           </div>
         </section>
 
-        {/* Stats Grid */}
         <section className="grid grid-cols-1 sm:grid-cols-3 gap-3 sm:gap-4 mb-6 sm:mb-8">
           <div className="bg-white border border-slate-200/80 rounded-2xl p-4 sm:p-6 shadow-2xs">
             <p className="text-xs font-medium text-slate-500 uppercase tracking-wider">Total Projects</p>
@@ -109,7 +107,6 @@ function Dashboard() {
           </div>
         </section>
 
-        {/* Projects and Actions Grid */}
         <section className="grid grid-cols-1 lg:grid-cols-3 gap-4 sm:gap-6 mb-6 sm:mb-8">
           <div className="lg:col-span-2 bg-white border border-slate-200/80 rounded-2xl p-5 sm:p-6 shadow-2xs">
             <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-3 mb-5">
@@ -175,7 +172,6 @@ function Dashboard() {
             )}
           </div>
 
-          {/* Quick Actions */}
           <div className="bg-white border border-slate-200/80 rounded-2xl p-5 sm:p-6 shadow-2xs flex flex-col justify-between">
             <div>
               <h2 className="text-lg sm:text-xl font-bold text-slate-900">Quick Actions</h2>
@@ -211,7 +207,6 @@ function Dashboard() {
           </div>
         </section>
 
-        {/* Account Info Card */}
         <section className="bg-white border border-slate-200/80 rounded-2xl p-5 sm:p-6 shadow-2xs">
           <div className="flex items-center justify-between mb-4 sm:mb-5">
             <div>
