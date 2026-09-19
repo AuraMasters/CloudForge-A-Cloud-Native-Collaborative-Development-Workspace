@@ -27,6 +27,9 @@ import {
   rollbackToCommit,
 } from "../services/vcsService.js";
 import containerService from "../services/containerService.js";
+import collaborationGateway from "../services/collaborationGateway.js";
+import collaborationService from "../services/collaborationService.js";
+import collaborationActivityService from "../services/collaborationActivityService.js";
 
 const computeContentSize = (content) => {
   if (!content) return 0;
@@ -225,7 +228,7 @@ export const getWorkspace = async (req, res) => {
   try {
     const project = await Project.findOne({
       _id: req.params.id,
-      owner: req.user.id,
+      $or: [{ owner: req.user._id || req.user.id }, { collaborators: req.user._id || req.user.id }],
     });
 
     if (!project) {
@@ -262,7 +265,7 @@ export const getProjectFiles = async (req, res) => {
   try {
     const project = await Project.findOne({
       _id: req.params.id,
-      owner: req.user.id,
+      $or: [{ owner: req.user._id || req.user.id }, { collaborators: req.user._id || req.user.id }],
     });
 
     if (!project) {
@@ -291,7 +294,7 @@ export const createProjectFile = async (req, res) => {
 
     const project = await Project.findOne({
       _id: req.params.id,
-      owner: req.user.id,
+      $or: [{ owner: req.user._id || req.user.id }, { collaborators: req.user._id || req.user.id }],
     });
 
     if (!project) {
@@ -302,6 +305,10 @@ export const createProjectFile = async (req, res) => {
     let normalizedPath = filePath ? filePath.trim() : `/${cleanName}`;
     if (!normalizedPath.startsWith("/")) {
       normalizedPath = "/" + normalizedPath;
+    }
+
+    if (normalizedPath.includes("..") || normalizedPath.includes("\\")) {
+      return res.status(400).json({ message: "Invalid file path: path traversal is not allowed" });
     }
 
     const existingFile = await ProjectFile.findOne({
@@ -356,6 +363,24 @@ export const createProjectFile = async (req, res) => {
       containerService.syncSingleFile(project._id, newFile.path, newFile.content).catch(() => {});
     }
 
+    // Real-time broadcast to all workspace collaborators
+    collaborationGateway.broadcastToRoom(project._id, {
+      type: "file_created",
+      file: newFile,
+      initiatedBy: req.user._id || req.user.id,
+      userName: req.user.name || "Collaborator",
+    });
+
+    collaborationActivityService.recordActivity(project._id, {
+      type: "file_created",
+      userId: req.user._id || req.user.id,
+      userName: req.user.name || "Collaborator",
+      fileId: newFile._id,
+      fileName: newFile.name,
+      message: `${req.user.name || "Collaborator"} created ${newFile.name}`,
+      metadata: { path: newFile.path },
+    });
+
     return res.status(201).json({
       message: `${type === "directory" ? "Folder" : "File"} '${cleanName}' created successfully`,
       file: newFile,
@@ -380,7 +405,7 @@ export const batchCreateProjectFiles = async (req, res) => {
 
     const project = await Project.findOne({
       _id: req.params.id,
-      owner: req.user.id,
+      $or: [{ owner: req.user._id || req.user.id }, { collaborators: req.user._id || req.user.id }],
     });
 
     if (!project) {
@@ -453,7 +478,7 @@ export const updateProjectFile = async (req, res) => {
 
     const project = await Project.findOne({
       _id: req.params.id,
-      owner: req.user.id,
+      $or: [{ owner: req.user._id || req.user.id }, { collaborators: req.user._id || req.user.id }],
     });
 
     if (!project) {
@@ -505,7 +530,7 @@ export const renameProjectFile = async (req, res) => {
 
     const project = await Project.findOne({
       _id: req.params.id,
-      owner: req.user.id,
+      $or: [{ owner: req.user._id || req.user.id }, { collaborators: req.user._id || req.user.id }],
     });
 
     if (!project) {
@@ -522,6 +547,9 @@ export const renameProjectFile = async (req, res) => {
     }
 
     const cleanNewName = newName.trim();
+    if (cleanNewName.includes("/") || cleanNewName.includes("\\") || cleanNewName.includes("..")) {
+      return res.status(400).json({ message: "Invalid new file name: path characters not allowed" });
+    }
     const parentPath = file.path.substring(0, file.path.lastIndexOf("/"));
     const newPath = parentPath ? `${parentPath}/${cleanNewName}` : `/${cleanNewName}`;
 
@@ -565,6 +593,28 @@ export const renameProjectFile = async (req, res) => {
       path: 1,
     });
 
+    // Real-time broadcast to all workspace collaborators
+    collaborationGateway.broadcastToRoom(project._id, {
+      type: "file_renamed",
+      fileId: file._id,
+      newName: cleanNewName,
+      newPath,
+      oldPath,
+      isDirectory: file.type === "directory",
+      initiatedBy: req.user._id || req.user.id,
+      userName: req.user.name || "Collaborator",
+    });
+
+    collaborationActivityService.recordActivity(project._id, {
+      type: "file_renamed",
+      userId: req.user._id || req.user.id,
+      userName: req.user.name || "Collaborator",
+      fileId: file._id,
+      fileName: cleanNewName,
+      message: `${req.user.name || "Collaborator"} renamed ${file.name} to ${cleanNewName}`,
+      metadata: { oldPath, newPath },
+    });
+
     return res.json({
       message: "Renamed successfully",
       file,
@@ -583,7 +633,7 @@ export const deleteProjectFile = async (req, res) => {
 
     const project = await Project.findOne({
       _id: req.params.id,
-      owner: req.user.id,
+      $or: [{ owner: req.user._id || req.user.id }, { collaborators: req.user._id || req.user.id }],
     });
 
     if (!project) {
@@ -615,6 +665,30 @@ export const deleteProjectFile = async (req, res) => {
       path: 1,
     });
 
+    // Remove from in-memory collaboration service cache
+    collaborationService.removeDocument(project._id, file._id);
+
+    // Real-time broadcast to all workspace collaborators
+    collaborationGateway.broadcastToRoom(project._id, {
+      type: "file_deleted",
+      fileId: file._id,
+      filePath: file.path,
+      fileName: file.name,
+      isDirectory: file.type === "directory",
+      initiatedBy: req.user._id || req.user.id,
+      userName: req.user.name || "Collaborator",
+    });
+
+    collaborationActivityService.recordActivity(project._id, {
+      type: "file_deleted",
+      userId: req.user._id || req.user.id,
+      userName: req.user.name || "Collaborator",
+      fileId: file._id,
+      fileName: file.name,
+      message: `${req.user.name || "Collaborator"} deleted ${file.name}`,
+      metadata: { path: file.path },
+    });
+
     return res.json({
       message: `Deleted '${file.name}' successfully`,
       files,
@@ -637,7 +711,7 @@ export const getProjectCommits = async (req, res) => {
   try {
     const project = await Project.findOne({
       _id: req.params.id,
-      owner: req.user.id,
+      $or: [{ owner: req.user._id || req.user.id }, { collaborators: req.user._id || req.user.id }],
     });
 
     if (!project) {
@@ -669,7 +743,7 @@ export const getProjectCommitDetails = async (req, res) => {
     const { sha } = req.params;
     const project = await Project.findOne({
       _id: req.params.id,
-      owner: req.user.id,
+      $or: [{ owner: req.user._id || req.user.id }, { collaborators: req.user._id || req.user.id }],
     });
 
     if (!project) {
@@ -706,7 +780,7 @@ export const createProjectCommit = async (req, res) => {
 
     const project = await Project.findOne({
       _id: req.params.id,
-      owner: req.user.id,
+      $or: [{ owner: req.user._id || req.user.id }, { collaborators: req.user._id || req.user.id }],
     });
 
     if (!project) {
@@ -729,6 +803,26 @@ export const createProjectCommit = async (req, res) => {
 
     project.updatedAt = new Date();
     await project.save();
+
+    // Real-time broadcast to all workspace collaborators
+    collaborationGateway.broadcastToRoom(project._id, {
+      type: "commit_created",
+      commit,
+      initiatedBy: req.user._id || req.user.id,
+      userName: req.user.name || "Collaborator",
+    });
+
+    collaborationActivityService.recordActivity(project._id, {
+      type: "commit_created",
+      userId: req.user._id || req.user.id,
+      userName: req.user.name || "Collaborator",
+      message: `${req.user.name || "Collaborator"} committed: "${commit.message}"`,
+      metadata: {
+        sha: commit.sha,
+        message: commit.message,
+        branch: commit.branch,
+      },
+    });
 
     return res.status(201).json({
       message: `Commit ${commit.sha} created successfully in CloudForge VCS`,
@@ -760,6 +854,25 @@ export const createOrSwitchBranch = async (req, res) => {
       projectId: req.params.id,
       branchName: cleanBranch,
       createNew,
+    });
+
+    // Real-time broadcast to all workspace collaborators
+    collaborationGateway.broadcastToRoom(req.params.id, {
+      type: "branch_changed",
+      currentBranch: result.project.currentBranch,
+      branches: result.project.branches,
+      initiatedBy: req.user._id || req.user.id,
+      userName: req.user.name || "Collaborator",
+    });
+
+    collaborationActivityService.recordActivity(req.params.id, {
+      type: "branch_changed",
+      userId: req.user._id || req.user.id,
+      userName: req.user.name || "Collaborator",
+      message: `${req.user.name || "Collaborator"} switched branch to "${result.project.currentBranch}"`,
+      metadata: {
+        branch: result.project.currentBranch,
+      },
     });
 
     return res.json({
@@ -918,7 +1031,10 @@ export const cherryPickCommitHandler = async (req, res) => {
     const { sha } = req.params;
     const { targetBranch } = req.body;
 
-    const project = await Project.findOne({ _id: req.params.id, owner: req.user.id });
+    const project = await Project.findOne({
+      _id: req.params.id,
+      $or: [{ owner: req.user._id || req.user.id }, { collaborators: req.user._id || req.user.id }],
+    });
     if (!project) return res.status(404).json({ message: "Project not found" });
 
     const result = await cherryPickCommit({
@@ -951,7 +1067,10 @@ export const revertCommitHandler = async (req, res) => {
     const { sha } = req.params;
     const { targetBranch } = req.body;
 
-    const project = await Project.findOne({ _id: req.params.id, owner: req.user.id });
+    const project = await Project.findOne({
+      _id: req.params.id,
+      $or: [{ owner: req.user._id || req.user.id }, { collaborators: req.user._id || req.user.id }],
+    });
     if (!project) return res.status(404).json({ message: "Project not found" });
 
     const result = await revertCommit({
@@ -982,7 +1101,10 @@ export const revertCommitHandler = async (req, res) => {
 export const saveProjectStash = async (req, res) => {
   try {
     const { message } = req.body;
-    const project = await Project.findOne({ _id: req.params.id, owner: req.user.id });
+    const project = await Project.findOne({
+      _id: req.params.id,
+      $or: [{ owner: req.user._id || req.user.id }, { collaborators: req.user._id || req.user.id }],
+    });
     if (!project) return res.status(404).json({ message: "Project not found" });
 
     const currentFiles = await ProjectFile.find({ projectId: project._id });
@@ -1145,7 +1267,10 @@ export const getProjectFileBlame = async (req, res) => {
       return res.status(400).json({ message: "File path query parameter is required" });
     }
 
-    const project = await Project.findOne({ _id: req.params.id, owner: req.user.id });
+    const project = await Project.findOne({
+      _id: req.params.id,
+      $or: [{ owner: req.user._id || req.user.id }, { collaborators: req.user._id || req.user.id }],
+    });
     if (!project) return res.status(404).json({ message: "Project not found" });
 
     const blame = await getFileBlame({
@@ -1172,7 +1297,10 @@ export const getProjectFileHistory = async (req, res) => {
       return res.status(400).json({ message: "File path query parameter is required" });
     }
 
-    const project = await Project.findOne({ _id: req.params.id, owner: req.user.id });
+    const project = await Project.findOne({
+      _id: req.params.id,
+      $or: [{ owner: req.user._id || req.user.id }, { collaborators: req.user._id || req.user.id }],
+    });
     if (!project) return res.status(404).json({ message: "Project not found" });
 
     const history = await getFileHistory({

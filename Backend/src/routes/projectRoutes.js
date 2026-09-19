@@ -8,6 +8,9 @@ import {
   deleteProject,
   getProjectEnv,
   updateProjectEnv,
+  getCollaborators,
+  addCollaborator,
+  removeCollaborator,
 } from "../controllers/projectController.js";
 
 import {
@@ -64,6 +67,11 @@ router.put("/:id", updateProject);
 router.delete("/:id", deleteProject);
 router.get("/:id/env", getProjectEnv);
 router.put("/:id/env", updateProjectEnv);
+
+// Collaborators
+router.get("/:id/collaborators", getCollaborators);
+router.post("/:id/collaborators", addCollaborator);
+router.delete("/:id/collaborators/:userId", removeCollaborator);
 
 // Workspace & Files
 router.get("/:id/workspace", getWorkspace);

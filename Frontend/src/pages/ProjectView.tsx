@@ -4,6 +4,7 @@ import JSZip from "jszip";
 import API_URL from "../config/api";
 import { useAlert } from "../hooks/useAlert";
 import { useTheme } from "../context/ThemeContext";
+import { useAuth } from "../context/AuthContent";
 import LoadingSpinner from "../components/ui/LoadingSpinner";
 import { type Project } from "../types/project";
 import {
@@ -34,6 +35,9 @@ import { EnvVariablesPanel } from "../components/workspace/EnvVariablesPanel";
 import { DeploymentPanel } from "../components/workspace/DeploymentPanel";
 import { BottomPanel } from "../components/workspace/BottomPanel";
 import { PreviewPanel } from "../components/workspace/PreviewPanel";
+import { CollaborationProvider } from "../collaboration/CollaborationProvider";
+import { CollaborationPanel } from "../components/workspace/CollaborationPanel";
+import { CollaboratorsModal } from "../components/workspace/CollaboratorsModal";
 import { vcsService } from "../services/vcsService";
 import { containerService } from "../services/containerService";
 import { type ContainerInfo, type DockerStatus, type CloudRunnerStatus } from "../types/container";
@@ -42,6 +46,7 @@ export default function ProjectView() {
   const { id } = useParams<{ id: string }>();
   const { showError, showSuccess } = useAlert();
   const { isDark } = useTheme();
+  const { user } = useAuth();
 
   const [project, setProject] = useState<Project | null>(null);
   const [cloudRunner, setCloudRunner] = useState<CloudRunnerStatus | null>(null);
@@ -56,6 +61,7 @@ export default function ProjectView() {
   const [isSaving, setIsSaving] = useState(false);
 
   // Unsaved changes confirmation states
+  const [isCollaboratorsModalOpen, setIsCollaboratorsModalOpen] = useState(false);
   const [closeTabPending, setCloseTabPending] = useState<string | null>(null);
   const [commitPending, setCommitPending] = useState<{
     message: string;
@@ -981,6 +987,50 @@ export default function ProjectView() {
     showSuccess("Time-travel rollback complete! Workspace restored to commit snapshot.");
   };
 
+  // Real-time Collaboration remote event handlers
+  const handleRemoteFileCreated = useCallback((newFile: WorkspaceFile) => {
+    setFiles((prev) => {
+      if (prev.some((f) => f._id === newFile._id)) return prev;
+      return [...prev, newFile];
+    });
+  }, []);
+
+  const handleRemoteFileRenamed = useCallback(
+    ({ fileId, newName, newPath }: { fileId: string; newName: string; newPath: string; oldPath: string }) => {
+      setFiles((prev) =>
+        prev.map((f) => (f._id === fileId ? { ...f, name: newName, path: newPath } : f))
+      );
+      setTabs((prev) =>
+        prev.map((t) => (t.fileId === fileId ? { ...t, name: newName, path: newPath } : t))
+      );
+    },
+    []
+  );
+
+  const handleRemoteFileDeleted = useCallback(
+    ({ fileId }: { fileId: string; filePath: string }) => {
+      setFiles((prev) => prev.filter((f) => f._id !== fileId));
+      setTabs((prev) => prev.filter((t) => t.fileId !== fileId));
+      setActiveTabId((curr) => (curr === fileId ? null : curr));
+    },
+    []
+  );
+
+  const handleRemoteCommitCreated = useCallback((newCommit: GitCommit) => {
+    setCommits((prev) => {
+      if (prev.some((c) => c._id === newCommit._id || c.sha === newCommit.sha)) return prev;
+      return [newCommit, ...prev];
+    });
+  }, []);
+
+  const handleRemoteBranchChanged = useCallback(
+    ({ currentBranch: branch, branches: branchList }: { currentBranch: string; branches: string[] }) => {
+      setCurrentBranch(branch);
+      setBranches(branchList);
+    },
+    []
+  );
+
   const isAnyTabDirty = tabs.some((t) => t.isDirty);
   const activeTab = tabs.find((t) => t.fileId === activeTabId);
 
@@ -997,21 +1047,30 @@ export default function ProjectView() {
   if (!project) return null;
 
   return (
-    <div className={`h-screen w-screen flex flex-col overflow-hidden font-sans select-none relative transition-colors duration-150 ${
-      isDark ? "bg-black text-white" : "bg-white text-black"
-    }`}>
-      <WorkspaceNavbar
-        project={project}
-        isDirty={isAnyTabDirty || changedFiles.length > 0}
-        isSaving={isSaving}
-        filesCount={files.filter((f) => f.type === "file").length}
-        commitsCount={commits.length}
-        onDownloadZip={handleDownloadZip}
-        onToggleMobileSidebar={() => setIsMobileSidebarOpen((prev) => !prev)}
-        isMobileSidebarOpen={isMobileSidebarOpen}
-        onTogglePreview={() => setIsPreviewSplitOpen((prev) => !prev)}
-        isPreviewOpen={isPreviewSplitOpen}
-      />
+    <CollaborationProvider
+      projectId={project._id}
+      onRemoteFileCreated={handleRemoteFileCreated}
+      onRemoteFileRenamed={handleRemoteFileRenamed}
+      onRemoteFileDeleted={handleRemoteFileDeleted}
+      onRemoteCommitCreated={handleRemoteCommitCreated}
+      onRemoteBranchChanged={handleRemoteBranchChanged}
+    >
+      <div className={`h-screen w-screen flex flex-col overflow-hidden font-sans select-none relative transition-colors duration-150 ${
+        isDark ? "bg-black text-white" : "bg-white text-black"
+      }`}>
+        <WorkspaceNavbar
+          project={project}
+          isDirty={isAnyTabDirty || changedFiles.length > 0}
+          isSaving={isSaving}
+          filesCount={files.filter((f) => f.type === "file").length}
+          commitsCount={commits.length}
+          onDownloadZip={handleDownloadZip}
+          onToggleMobileSidebar={() => setIsMobileSidebarOpen((prev) => !prev)}
+          isMobileSidebarOpen={isMobileSidebarOpen}
+          onTogglePreview={() => setIsPreviewSplitOpen((prev) => !prev)}
+          isPreviewOpen={isPreviewSplitOpen}
+          onOpenCollaboratorsModal={() => setIsCollaboratorsModalOpen(true)}
+        />
 
       <div className="flex-1 flex overflow-hidden relative">
         {isMobileSidebarOpen && (
@@ -1120,6 +1179,17 @@ export default function ProjectView() {
                   projectId={project._id}
                   projectName={project.name}
                   files={files}
+                />
+              )}
+
+              {activeActivityTab === "collaboration" && (
+                <CollaborationPanel
+                  projectId={project._id}
+                  onOpenFile={(fileId) => {
+                    const targetFile = files.find((f) => f._id === fileId);
+                    if (targetFile) handleSelectFile(targetFile);
+                  }}
+                  onOpenInviteModal={() => setIsCollaboratorsModalOpen(true)}
                 />
               )}
 
@@ -1340,6 +1410,24 @@ export default function ProjectView() {
           onCancel={() => setCommitPending(null)}
         />
       )}
+
+      {isCollaboratorsModalOpen && (
+        <CollaboratorsModal
+          projectId={project._id}
+          projectName={project.name}
+          isOwner={
+            Boolean(user && (
+              project.owner === (user as any)._id ||
+              project.owner === (user as any).id ||
+              (project.owner as any)?._id === (user as any)._id ||
+              (project.owner as any)?._id === (user as any).id
+            ))
+          }
+          isOpen={isCollaboratorsModalOpen}
+          onClose={() => setIsCollaboratorsModalOpen(false)}
+        />
+      )}
     </div>
+  </CollaborationProvider>
   );
 }

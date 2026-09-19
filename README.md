@@ -300,14 +300,21 @@ CloudForge/
 │
 ├── Frontend/
 │   ├── src/
+│   │   ├── collaboration/      # Real-Time Collaboration Architecture
+│   │   │   ├── types.ts                # Collaboration protocol & state types
+│   │   │   ├── collaborationClient.ts  # Resilient WebSocket client & reconnect logic
+│   │   │   ├── documentSync.ts         # Yjs CRDT + Monaco editor synchronization binding
+│   │   │   └── CollaborationProvider.tsx # Real-time React context & event dispatcher
 │   │   ├── components/
 │   │   │   ├── layout/         # Navbar and global layouts
 │   │   │   ├── projects/       # Project cards, creation modal, and repository picker
 │   │   │   ├── ui/             # LoadingSpinner, EmptyState
 │   │   │   └── workspace/      # VS Code-grade Workspace Components
-│   │   │       ├── ActivityBar.tsx
+│   │   │       ├── ActivityBar.tsx         # Activity bar with Collaboration icon & badge
 │   │   │       ├── BottomPanel.tsx
-│   │   │       ├── CodeEditor.tsx
+│   │   │       ├── CodeEditor.tsx          # Monaco Editor with live remote cursors
+│   │   │       ├── CollaborationPanel.tsx  # Collaborators list and real-time activity feed
+│   │   │       ├── CollaboratorsModal.tsx  # Collaborator invitation & role management
 │   │   │       ├── CommitDetailsModal.tsx
 │   │   │       ├── DiffViewer.tsx
 │   │   │       ├── FileExplorer.tsx
@@ -317,11 +324,11 @@ CloudForge/
 │   │   │       ├── SearchPanel.tsx
 │   │   │       ├── SourceControlPanel.tsx
 │   │   │       ├── StatusBar.tsx
-│   │   │       └── WorkspaceNavbar.tsx
+│   │   │       └── WorkspaceNavbar.tsx     # Collaborators avatar stack & status badge
 │   │   ├── pages/
 │   │   │   ├── Dashboard.tsx
 │   │   │   ├── Project.tsx     # Projects list overview
-│   │   │   └── ProjectView.tsx # Main IDE Workspace
+│   │   │   └── ProjectView.tsx # Main IDE Workspace wrapped in CollaborationProvider
 │   │   ├── types/              # TypeScript definitions (project.ts, workspace.ts)
 │   │   └── main.tsx
 │   └── package.json
@@ -331,7 +338,77 @@ CloudForge/
 
 ---
 
-## 12. Installation & Setup Guide
+## 12. Real-Time Collaboration System
+
+CloudForge integrates an enterprise-grade real-time collaboration engine that enables multiple authenticated developers to concurrently code, review, and navigate the same cloud workspace.
+
+```
++-----------------------------------------------------------------------------------------+
+|                        CLOUDFORGE COLLABORATION ARCHITECTURE                           |
++-----------------------------------------------------------------------------------------+
+|                                                                                         |
+|   Client A (Alice)                           Client B (Bob)                             |
+|   +--------------------------+               +--------------------------+               |
+|   | Monaco Editor + Yjs Doc  |               | Monaco Editor + Yjs Doc  |               |
+|   | CollaborationClient      |               | CollaborationClient      |               |
+|   +------------+-------------+               +------------+-------------+               |
+|                |                                          |                             |
+|                |  /ws/collaboration (JWT Authenticated)   |                             |
+|                +-------------------+  +-------------------+                             |
+|                                    |  |                                                 |
+|                                    v  v                                                 |
+|                   +------------------------------------+                                |
+|                   |        CollaborationGateway        |                                |
+|                   |  - JWT Authentication              |                                |
+|                   |  - Project Membership Guard (1008) |                                |
+|                   |  - Event Router                    |                                |
+|                   +-----------------+------------------+                                |
+|                                     |                                                   |
+|                +--------------------+--------------------+                              |
+|                v                                         v                              |
+|   +--------------------------+              +--------------------------+                |
+|   |     PresenceService      |              |   CollaborationService   |                |
+|   |  - Room memberships      |              |  - In-memory Y.Doc cache |                |
+|   |  - Cursor & selections   |              |  - CRDT Sync Steps 1 & 2 |                |
+|   |  - Dynamic user colors   |              |  - Incremental diff sync |                |
+|   +--------------------------+              |  - Debounced auto-save   |                |
+|                                             +------------+-------------+                |
+|                                                          |                              |
+|                                                          v (Every 8s / on-exit)         |
+|                                             +--------------------------+                |
+|                                             |    MongoDB Collections   |                |
+|                                             |  - ProjectFile (content) |                |
+|                                             |  - Project (collabs)     |                |
+|                                             +--------------------------+                |
++-----------------------------------------------------------------------------------------+
+```
+
+### Key Technical Capabilities:
+1. **Dedicated WebSocket Gateway (`/ws/collaboration`)**:
+   - Strictly isolated from `/ws/terminal` to preserve dedicated cloud shell pty streams without multiplexing interference.
+   - Requires valid JWT authorization via bearer token or cookie query parameters.
+   - Enforces workspace security: unauthorized attempts to join non-member project rooms are rejected immediately with WebSocket close code `1008`.
+
+2. **CRDT-Powered Concurrent Document Sync (Yjs + Monaco)**:
+   - Conflict-Free Replicated Data Types (CRDTs) guarantee mathematical convergence across concurrent, out-of-order, or delayed keystrokes.
+   - Clients exchange compact base64 binary update frames (`document_update`) instead of whole documents, slashing network bandwidth.
+   - State Vector handshakes (`document_sync_step_1` & `document_sync_step_2`) allow newly joining clients or reconnected peers to synchronize instantly.
+
+3. **In-Memory Buffer & High-Efficiency Persistence**:
+   - Zero per-keystroke database writes. All edits mutate in-memory CRDT structures with sub-millisecond local response times.
+   - Persistence occurs automatically via a debounced 8-second flusher or when the last peer disconnects from a document.
+
+4. **Live Presence & Remote Cursors**:
+   - Real-time cursor coordinates (`line`, `col`) and multi-line selection ranges are transmitted with assigned user colors.
+   - Workspace Navbar includes live collaborator avatar stacks, active counts, and a dedicated Collaboration sidebar tab.
+
+5. **File Operations & Git Synchronization**:
+   - File creation, rename, and deletion events propagate across all active collaborator workspaces in real time.
+   - Git commits, branch switching, and remote sync events update collaborator timelines without requiring page refreshes.
+
+---
+
+## 13. Installation & Setup Guide
 
 ### Prerequisites
 * **Node.js**: v18.0.0 or higher
@@ -373,8 +450,15 @@ npm run dev
 
 Navigate to `http://localhost:5173` in your browser.
 
+### 3. Automated Collaboration Verification Suite
+To run the automated end-to-end multi-user test suite verifying two-user simultaneous editing, CRDT convergence, presence, file system events, Git broadcasts, security guards, and terminal independence:
+```bash
+cd Backend
+node scripts/test-collaboration-e2e.js
+```
+
 ---
 
-## 13. License
+## 14. License
 
 This project is licensed under the MIT License.

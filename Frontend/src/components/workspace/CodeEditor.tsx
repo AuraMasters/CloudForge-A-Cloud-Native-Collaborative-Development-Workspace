@@ -22,6 +22,7 @@ import { FileIcon } from "./FileIcon";
 import { type EditorTab } from "../../types/workspace";
 import { formatCode } from "./editor/codeFormatter";
 import { useTheme } from "../../context/ThemeContext";
+import { useCollaboration } from "../../collaboration/CollaborationProvider";
 
 import { MarkdownViewer } from "./viewers/MarkdownViewer";
 import { MermaidViewer } from "./viewers/MermaidViewer";
@@ -125,6 +126,11 @@ export const CodeEditor: React.FC<CodeEditorProps> = ({
   const editorRef = useRef<any>(null);
   const monacoRef = useRef<Monaco | null>(null);
 
+  // Real-time Collaboration hooks & refs
+  const collaboration = useCollaboration();
+  const collabCleanupRef = useRef<(() => void) | null>(null);
+  const collabFileIdRef = useRef<string | null>(null);
+
   useEffect(() => {
     localStorage.setItem("cf_editor_font_size", fontSize.toString());
   }, [fontSize]);
@@ -173,6 +179,54 @@ export const CodeEditor: React.FC<CodeEditorProps> = ({
   const isPptx = ["pptx", "ppt", "ppsx"].includes(activeExt);
   const isMedia = ["mp3", "wav", "ogg", "mp4", "webm", "mov"].includes(activeExt);
   const isIpynb = activeExt === "ipynb";
+
+  const isBinaryOrCustomViewer = isPdf || isImage || isSpreadsheet || isDocx || isPptx || isMedia || isIpynb;
+
+  // Collaborators editing the currently active file
+  const fileCollaborators = useMemo(() => {
+    if (!collaboration || !activeTab) return [];
+    return (collaboration.collaborators || []).filter(
+      (c) => c.currentFileId === activeTab.fileId
+    );
+  }, [collaboration, activeTab?.fileId]);
+
+  // Synchronize active file and Yjs Monaco binding
+  useEffect(() => {
+    if (!collaboration || !activeTab) return;
+
+    if (isBinaryOrCustomViewer) {
+      if (collabCleanupRef.current) {
+        collabCleanupRef.current();
+        collabCleanupRef.current = null;
+      }
+      collabFileIdRef.current = null;
+      collaboration.updateActiveFile(null, null);
+      return;
+    }
+
+    collaboration.updateActiveFile(activeTab.fileId, activeTab.name);
+
+    if (editorRef.current && collabFileIdRef.current !== activeTab.fileId) {
+      if (collabCleanupRef.current) {
+        collabCleanupRef.current();
+        collabCleanupRef.current = null;
+      }
+      const cleanupObj = collaboration.attachEditor(activeTab.fileId, editorRef.current, activeTab.content);
+      if (cleanupObj && typeof cleanupObj.destroy === "function") {
+        collabCleanupRef.current = cleanupObj.destroy;
+      }
+      collabFileIdRef.current = activeTab.fileId;
+    }
+  }, [activeTab?.fileId, activeTab?.name, collaboration, isBinaryOrCustomViewer]);
+
+  useEffect(() => {
+    return () => {
+      if (collabCleanupRef.current) {
+        collabCleanupRef.current();
+        collabCleanupRef.current = null;
+      }
+    };
+  }, []);
 
   // Reset custom language when tab changes
   useEffect(() => {
@@ -377,6 +431,20 @@ export const CodeEditor: React.FC<CodeEditorProps> = ({
     editor.addCommand(monaco.KeyMod.Alt | monaco.KeyMod.Shift | monaco.KeyCode.KeyF, () => {
       handleAutoFormat();
     });
+
+    // Attach real-time collaborative editing if available
+    if (collaboration && activeTab && !isBinaryOrCustomViewer) {
+      if (collabCleanupRef.current) {
+        collabCleanupRef.current();
+        collabCleanupRef.current = null;
+      }
+      const cleanupObj = collaboration.attachEditor(activeTab.fileId, editor, activeTab.content);
+      if (cleanupObj && typeof cleanupObj.destroy === "function") {
+        collabCleanupRef.current = cleanupObj.destroy;
+      }
+      collabFileIdRef.current = activeTab.fileId;
+      collaboration.updateActiveFile(activeTab.fileId, activeTab.name);
+    }
   };
 
   // Jump to next diagnostic error
@@ -731,6 +799,27 @@ export const CodeEditor: React.FC<CodeEditorProps> = ({
                   </span>
                 </React.Fragment>
               ))}
+
+              {/* Active collaborators editing this file */}
+              {fileCollaborators.length > 0 && (
+                <div className="flex items-center gap-1.5 ml-2 pl-2 border-l border-neutral-700/50 shrink-0">
+                  <div className="flex -space-x-1.5 overflow-hidden">
+                    {fileCollaborators.map((c) => (
+                      <span
+                        key={c.socketId}
+                        className="w-4 h-4 rounded-full flex items-center justify-center text-[8px] font-bold text-white ring-1 ring-neutral-900"
+                        style={{ backgroundColor: c.color }}
+                        title={`${c.name} is currently editing this file`}
+                      >
+                        {c.name.slice(0, 2).toUpperCase()}
+                      </span>
+                    ))}
+                  </div>
+                  <span className="text-[10px] text-neutral-400 hidden lg:inline">
+                    {fileCollaborators.length} editing
+                  </span>
+                </div>
+              )}
             </div>
 
             {/* Standard Text/Code File Options (Format, Find, Wrap, Minimap, Zoom, Copy, Diagnostics, Language) */}

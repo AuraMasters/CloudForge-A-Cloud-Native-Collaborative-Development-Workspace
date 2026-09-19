@@ -36,6 +36,14 @@ const projectSchema = new mongoose.Schema(
       index: true,
     },
 
+    collaborators: [
+      {
+        type: mongoose.Schema.Types.ObjectId,
+        ref: "User",
+        index: true,
+      },
+    ],
+
     currentBranch: {
       type: String,
       default: "main",

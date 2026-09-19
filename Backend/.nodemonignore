@@ -1,0 +1,8 @@
+scripts/
+*.test.js
+*.log
+storage/
+workspaces/
+temp/
+data/
+

@@ -23,5 +23,13 @@ dist-ssr
 
 
 .env
+.env.*
+*.env
+Backend/.env
+Backend/.env.*
+Frontend/.env
+Frontend/.env.*
 storage/
 Backend/storage/
+test-state.json
+**/test-state.json

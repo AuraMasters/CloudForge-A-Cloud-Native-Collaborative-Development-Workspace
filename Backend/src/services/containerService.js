@@ -293,7 +293,10 @@ class ContainerService {
         continue;
       }
 
-      const targetPath = path.join(workspaceDir, relativePath);
+      const targetPath = path.resolve(workspaceDir, relativePath);
+      if (!targetPath.startsWith(workspaceDir + path.sep) && targetPath !== workspaceDir) {
+        continue;
+      }
 
       if (file.type === "directory") {
         if (!fs.existsSync(targetPath)) {
@@ -342,8 +345,11 @@ class ContainerService {
         relativePath = relativePath.substring(1);
       }
 
-      // Update local cache
-      const targetPath = path.join(workspaceDir, relativePath);
+      // Update local cache with traversal prevention
+      const targetPath = path.resolve(workspaceDir, relativePath);
+      if (!targetPath.startsWith(workspaceDir + path.sep) && targetPath !== workspaceDir) {
+        throw new Error("Invalid path traversal attempted");
+      }
       const parentDir = path.dirname(targetPath);
       if (!fs.existsSync(parentDir)) {
         fs.mkdirSync(parentDir, { recursive: true });
@@ -823,6 +829,27 @@ class ContainerService {
         });
       });
     });
+  }
+
+  /**
+   * Attach terminal PTY/shell session to WebSocket
+   */
+  async attachTerminalPty(projectId, ws, cols = 80, rows = 24) {
+    return this.createTerminalSession(
+      projectId,
+      cols,
+      rows,
+      (chunk) => {
+        if (ws && ws.readyState === 1) {
+          ws.send(JSON.stringify({ type: "output", data: chunk }));
+        }
+      },
+      (code) => {
+        if (ws && ws.readyState === 1) {
+          ws.send(JSON.stringify({ type: "exit", code }));
+        }
+      }
+    );
   }
 
   /**

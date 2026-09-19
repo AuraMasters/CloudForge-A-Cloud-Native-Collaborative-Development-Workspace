@@ -1,13 +1,15 @@
 import React from "react";
-import { Files, GitBranch, History, Search, KeyRound, Rocket, Settings, Cloud, Terminal as TerminalIcon, Globe } from "lucide-react";
+import { Files, GitBranch, History, Search, KeyRound, Rocket, Settings, Cloud, Terminal as TerminalIcon, Globe, Users } from "lucide-react";
 import { type ActivityBarTab } from "../../types/workspace";
 import { useTheme } from "../../context/ThemeContext";
+import { useCollaboration } from "../../collaboration/CollaborationProvider";
 
 interface ActivityBarProps {
   activeTab: ActivityBarTab;
   onChangeTab: (tab: ActivityBarTab) => void;
   changedFilesCount: number;
   commitsCount?: number;
+  collaboratorsCount?: number;
   envVariablesCount?: number;
   isSidebarOpen?: boolean;
   onToggleTerminal?: () => void;
@@ -19,12 +21,15 @@ export const ActivityBar: React.FC<ActivityBarProps> = ({
   onChangeTab,
   changedFilesCount,
   commitsCount = 0,
+  collaboratorsCount = 0,
   envVariablesCount = 0,
   isSidebarOpen = true,
   onToggleTerminal,
   isTerminalOpen = false,
 }) => {
   const { isDark } = useTheme();
+  const collab = useCollaboration();
+  const effectiveCollabCount = collaboratorsCount || collab?.collaborators?.length || 0;
 
   const topItems: { id: ActivityBarTab; label: string; icon: React.ReactNode; badge?: number }[] = [
     {
@@ -48,6 +53,12 @@ export const ActivityBar: React.FC<ActivityBarProps> = ({
       id: "preview",
       label: "Live Web App Preview & Dev Servers",
       icon: <Globe className="w-5 h-5 text-blue-400" />,
+    },
+    {
+      id: "collaboration",
+      label: "Real-Time Collaborators & Activity",
+      icon: <Users className="w-5 h-5 text-indigo-400" />,
+      badge: effectiveCollabCount > 0 ? effectiveCollabCount : undefined,
     },
     {
       id: "search",

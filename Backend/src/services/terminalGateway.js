@@ -1,9 +1,12 @@
 import { WebSocketServer } from "ws";
 import jwt from "jsonwebtoken";
 import url from "url";
+import mongoose from "mongoose";
 import containerService from "./containerService.js";
 import previewProxyService from "./previewProxyService.js";
+import collaborationGateway from "./collaborationGateway.js";
 import Project from "../models/Project.js";
+import User from "../models/User.js";
 
 class TerminalGateway {
   constructor() {
@@ -20,13 +23,15 @@ class TerminalGateway {
     });
 
     httpServer.on("upgrade", async (request, socket, head) => {
-      const parsedUrl = url.parse(request.url, true);
+      const parsedUrl = new URL(request.url, "http://localhost");
       const pathname = parsedUrl.pathname || "";
 
       if (pathname === "/ws/terminal" || pathname === "/api/ws/terminal") {
         this.wss.handleUpgrade(request, socket, head, (ws) => {
           this.wss.emit("connection", ws, request);
         });
+      } else if (pathname === "/ws/collaboration" || pathname === "/api/ws/collaboration") {
+        collaborationGateway.handleUpgrade(request, socket, head);
       } else if (pathname.includes("/preview/")) {
         // Delegate to previewProxyService for live Vite/Next.js/Streamlit HMR WebSockets
         const handled = await previewProxyService.handleWebSocketUpgrade(request, socket, head);
@@ -73,37 +78,52 @@ class TerminalGateway {
    * Handle incoming WebSocket client connection
    */
   async _handleConnection(ws, request) {
-    const parsedUrl = url.parse(request.url, true);
-    const query = parsedUrl.query;
+    const parsedUrl = new URL(request.url, "http://localhost");
+    const query = Object.fromEntries(parsedUrl.searchParams.entries());
     const projectId = query.projectId;
     const tabId = query.tabId || "tab-1";
     const initialCols = parseInt(query.cols, 10) || 80;
     const initialRows = parseInt(query.rows, 10) || 24;
 
-    if (!projectId) {
-      ws.send(JSON.stringify({ type: "error", message: "Missing projectId query parameter." }));
-      ws.close(1008, "Missing projectId");
+    if (!projectId || !mongoose.Types.ObjectId.isValid(projectId)) {
+      ws.send(JSON.stringify({ type: "error", message: "Invalid or missing projectId" }));
+      ws.close(1008, "Invalid or missing projectId");
       return;
     }
 
-    // Authenticate token (if JWT_SECRET is configured)
+    // Authenticate token
     const token = this._extractToken(request, query);
-    let userId = null;
-    if (process.env.JWT_SECRET && token) {
-      try {
-        const decoded = jwt.verify(token, process.env.JWT_SECRET);
-        userId = decoded.id;
-      } catch (err) {
-        console.warn(`Terminal WS connection auth token warning: ${err.message}`);
-      }
+    if (!token) {
+      ws.send(JSON.stringify({ type: "error", message: "Authentication required" }));
+      ws.close(1008, "Authentication required");
+      return;
     }
 
-    // Verify project exists
+    let user = null;
     try {
-      const project = await Project.findById(projectId);
+      const decoded = jwt.verify(token, process.env.JWT_SECRET);
+      const userId = decoded.userId || decoded.id;
+      user = await User.findById(userId).select("-password");
+      if (!user) {
+        ws.send(JSON.stringify({ type: "error", message: "User not found" }));
+        ws.close(1008, "User not found");
+        return;
+      }
+    } catch (err) {
+      ws.send(JSON.stringify({ type: "error", message: "Invalid or expired token" }));
+      ws.close(1008, "Invalid token");
+      return;
+    }
+
+    // Verify project exists and user is owner or collaborator
+    try {
+      const project = await Project.findOne({
+        _id: projectId,
+        $or: [{ owner: user._id }, { collaborators: user._id }],
+      });
       if (!project) {
-        ws.send(JSON.stringify({ type: "error", message: "Project not found." }));
-        ws.close(1008, "Project not found");
+        ws.send(JSON.stringify({ type: "error", message: "Unauthorized access to project" }));
+        ws.close(1008, "Unauthorized project access");
         return;
       }
     } catch (err) {

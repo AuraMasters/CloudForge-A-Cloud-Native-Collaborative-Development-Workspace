@@ -1,5 +1,6 @@
 import Project from "../models/Project.js";
 import ProjectFile from "../models/ProjectFile.js";
+import User from "../models/User.js";
 import containerService from "../services/containerService.js";
 
 export const createProject = async (req, res) => {
@@ -37,8 +38,11 @@ export const getProjects = async (req, res) => {
   try {
     const userId = req.user._id || req.user.id;
     const projects = await Project.find({
-      owner: userId,
-    }).sort({ createdAt: -1 });
+      $or: [{ owner: userId }, { collaborators: userId }],
+    })
+      .populate("owner", "name email")
+      .populate("collaborators", "name email")
+      .sort({ createdAt: -1 });
 
     res.status(200).json({
       projects,
@@ -56,8 +60,10 @@ export const getProject = async (req, res) => {
     const userId = req.user._id || req.user.id;
     const project = await Project.findOne({
       _id: req.params.id,
-      owner: userId,
-    });
+      $or: [{ owner: userId }, { collaborators: userId }],
+    })
+      .populate("owner", "name email")
+      .populate("collaborators", "name email");
 
     if (!project) {
       return res.status(404).json({
@@ -73,6 +79,97 @@ export const getProject = async (req, res) => {
       message: "Failed to fetch project",
       error: error.message,
     });
+  }
+};
+
+export const getCollaborators = async (req, res) => {
+  try {
+    const userId = req.user._id || req.user.id;
+    const project = await Project.findOne({
+      _id: req.params.id,
+      $or: [{ owner: userId }, { collaborators: userId }],
+    })
+      .populate("owner", "name email")
+      .populate("collaborators", "name email");
+
+    if (!project) {
+      return res.status(404).json({ message: "Project not found" });
+    }
+
+    res.status(200).json({
+      owner: project.owner,
+      collaborators: project.collaborators || [],
+    });
+  } catch (error) {
+    res.status(500).json({ message: "Failed to fetch collaborators", error: error.message });
+  }
+};
+
+export const addCollaborator = async (req, res) => {
+  try {
+    const userId = req.user._id || req.user.id;
+    const { email } = req.body;
+
+    if (!email || !email.trim()) {
+      return res.status(400).json({ message: "Email is required" });
+    }
+
+    const project = await Project.findOne({
+      _id: req.params.id,
+      owner: userId,
+    });
+
+    if (!project) {
+      return res.status(403).json({ message: "Only the project owner can add collaborators" });
+    }
+
+    const targetUser = await User.findOne({ email: email.trim().toLowerCase() }).select("_id name email");
+    if (!targetUser) {
+      return res.status(404).json({ message: `No user found with email "${email}"` });
+    }
+
+    if (targetUser._id.equals(project.owner)) {
+      return res.status(400).json({ message: "Owner is already a member of this project" });
+    }
+
+    if (project.collaborators.some((c) => c.equals(targetUser._id))) {
+      return res.status(409).json({ message: "User is already a collaborator on this project" });
+    }
+
+    project.collaborators.push(targetUser._id);
+    await project.save();
+
+    res.status(200).json({
+      message: `Added ${targetUser.name || targetUser.email} as collaborator`,
+      collaborator: targetUser,
+    });
+  } catch (error) {
+    res.status(500).json({ message: "Failed to add collaborator", error: error.message });
+  }
+};
+
+export const removeCollaborator = async (req, res) => {
+  try {
+    const userId = req.user._id || req.user.id;
+    const targetUserId = req.params.userId;
+
+    const project = await Project.findOne({
+      _id: req.params.id,
+      owner: userId,
+    });
+
+    if (!project) {
+      return res.status(403).json({ message: "Only the project owner can remove collaborators" });
+    }
+
+    project.collaborators = project.collaborators.filter(
+      (c) => c.toString() !== targetUserId
+    );
+    await project.save();
+
+    res.status(200).json({ message: "Collaborator removed successfully" });
+  } catch (error) {
+    res.status(500).json({ message: "Failed to remove collaborator", error: error.message });
   }
 };
 

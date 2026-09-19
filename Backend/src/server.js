@@ -4,12 +4,14 @@ import dotenv from "dotenv";
 import cors from "cors";
 import cookieParser from "cookie-parser";
 
-import connectDB from "./config/db.js";
+import connectDB, { disconnectDB } from "./config/db.js";
 
 import authRoutes from "./routes/authRoutes.js";
 import projectRoutes from "./routes/projectRoutes.js";
 import previewRoutes from "./routes/previewRoutes.js";
 import terminalGateway from "./services/terminalGateway.js";
+import collaborationGateway from "./services/collaborationGateway.js";
+import collaborationService from "./services/collaborationService.js";
 
 dotenv.config();
 
@@ -64,10 +66,35 @@ const startServer = async () => {
   // Initialize Terminal WebSocket Gateway
   terminalGateway.init(server);
 
+  // Initialize Collaboration WebSocket Gateway
+  collaborationGateway.init();
+
   server.listen(PORT, () => {
     console.log(`CloudForge backend running on port ${PORT} [Env: ${process.env.NODE_ENV || "development"}]`);
     console.log(`Terminal WebSocket Gateway listening on ws://localhost:${PORT}/ws/terminal`);
+    console.log(`Collaboration WebSocket Gateway listening on ws://localhost:${PORT}/ws/collaboration`);
   });
 };
+
+const handleShutdown = async (signal) => {
+  console.log(`\nReceived ${signal}. Flushing collaboration documents...`);
+  try {
+    await collaborationService.destroy();
+  } catch (err) {
+    console.error("Error flushing documents on shutdown:", err.message);
+  }
+  try {
+    await disconnectDB();
+  } catch (err) {
+    console.error("Error disconnecting database on shutdown:", err.message);
+  }
+  process.exit(0);
+};
+
+process.on("SIGTERM", () => handleShutdown("SIGTERM"));
+process.on("SIGINT", () => handleShutdown("SIGINT"));
+process.once("SIGUSR2", async () => {
+  await handleShutdown("SIGUSR2");
+});
 
 startServer();

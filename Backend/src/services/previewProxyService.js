@@ -67,7 +67,7 @@ class PreviewProxyService {
     }
 
     // Preserve query strings
-    const queryString = url.parse(req.url).search || "";
+    const queryString = new URL(req.url, "http://localhost").search || "";
     const fullTargetPath = targetPath + queryString;
 
     const proxyHeaders = { ...req.headers };
@@ -170,7 +170,7 @@ class PreviewProxyService {
    * Handle WebSocket Upgrade for live HMR (Vite / Next.js / Streamlit)
    */
   async handleWebSocketUpgrade(req, socket, head) {
-    const parsedUrl = url.parse(req.url, true);
+    const parsedUrl = new URL(req.url, "http://localhost");
     const pathname = parsedUrl.pathname || "";
 
     // Expected format: /api/projects/:projectId/preview/:port/...

@@ -9,11 +9,13 @@ import {
   Sun,
   Moon,
   Globe,
+  Users,
 } from "lucide-react";
 import { type Project } from "../../types/project";
 import { useNavigate } from "react-router-dom";
 import { useTheme } from "../../context/ThemeContext";
 import { BrandLogo } from "../ui/BrandLogo";
+import { useCollaboration } from "../../collaboration/CollaborationProvider";
 
 interface WorkspaceNavbarProps {
   project: Project;
@@ -26,6 +28,7 @@ interface WorkspaceNavbarProps {
   isMobileSidebarOpen?: boolean;
   onTogglePreview?: () => void;
   isPreviewOpen?: boolean;
+  onOpenCollaboratorsModal?: () => void;
 }
 
 export const WorkspaceNavbar: React.FC<WorkspaceNavbarProps> = ({
@@ -39,9 +42,14 @@ export const WorkspaceNavbar: React.FC<WorkspaceNavbarProps> = ({
   isMobileSidebarOpen,
   onTogglePreview,
   isPreviewOpen = false,
+  onOpenCollaboratorsModal,
 }) => {
   const navigate = useNavigate();
   const { isDark, toggleTheme } = useTheme();
+  const collab = useCollaboration();
+  const status = collab?.status || "disconnected";
+  const collaborators = collab?.collaborators || [];
+  const activeCount = collab?.activeCount || 0;
 
   return (
     <header
@@ -134,6 +142,51 @@ export const WorkspaceNavbar: React.FC<WorkspaceNavbarProps> = ({
       </div>
 
       <div className="flex items-center gap-1.5 sm:gap-2">
+        {/* Real-time Collaborators Presence & Avatar Stack */}
+        <div className="flex items-center gap-1.5 pl-1.5 border-l border-neutral-200 dark:border-neutral-800">
+          {collaborators.length > 0 && (
+            <div className="flex items-center -space-x-2 overflow-hidden py-0.5">
+              {collaborators.slice(0, 3).map((c, idx) => (
+                <div
+                  key={c.socketId ? `${c.userId}-${c.socketId}` : `${c.userId}-${idx}`}
+                  style={{ backgroundColor: c.color }}
+                  className="w-6 h-6 rounded-full text-white font-bold text-[10px] flex items-center justify-center uppercase ring-2 ring-white dark:ring-black shadow-xs cursor-default shrink-0"
+                  title={`${c.name} (${c.email})${c.currentFileName ? ` • viewing ${c.currentFileName}` : ""}`}
+                >
+                  {c.name.slice(0, 2)}
+                </div>
+              ))}
+              {collaborators.length > 3 && (
+                <div className="w-6 h-6 rounded-full bg-neutral-600 text-white font-bold text-[9px] flex items-center justify-center ring-2 ring-white dark:ring-black shrink-0">
+                  +{collaborators.length - 3}
+                </div>
+              )}
+            </div>
+          )}
+
+          <button
+            onClick={onOpenCollaboratorsModal}
+            className={`flex items-center gap-1.5 px-2.5 py-1.5 rounded-lg text-xs font-semibold border transition-colors cursor-pointer ${
+              isDark
+                ? "bg-neutral-900 border-neutral-800 text-neutral-200 hover:bg-neutral-800"
+                : "bg-neutral-100 border-neutral-200 text-neutral-800 hover:bg-neutral-200"
+            }`}
+            title="Manage Collaborators & Live Sessions"
+          >
+            <span
+              className={`w-2 h-2 rounded-full ${
+                status === "connected"
+                  ? "bg-emerald-500"
+                  : status === "reconnecting"
+                  ? "bg-amber-500 animate-pulse"
+                  : "bg-rose-500"
+              }`}
+            />
+            <span className="hidden sm:inline">{activeCount} Online</span>
+            <Users className="w-3.5 h-3.5 opacity-70" />
+          </button>
+        </div>
+
         {onTogglePreview && (
           <button
             onClick={onTogglePreview}
