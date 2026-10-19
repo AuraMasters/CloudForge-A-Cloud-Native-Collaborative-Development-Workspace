@@ -57,6 +57,10 @@ function Register() {
         throw new Error(data.message || "Registration failed");
       }
 
+      if (data.token) {
+        localStorage.setItem("cf_auth_token", data.token);
+      }
+
       showSuccess("Account created! Please sign in.");
       navigate("/login");
     } catch (err: unknown) {

@@ -38,8 +38,15 @@ export function AuthProvider({
   useEffect(() => {
     const initializeAuth = async () => {
       try {
+        const token = localStorage.getItem("cf_auth_token");
+        const headers: Record<string, string> = {};
+        if (token) {
+          headers["Authorization"] = `Bearer ${token}`;
+        }
+
         const response = await fetch(`${API_URL}/api/auth/me`, {
           credentials: "include",
+          headers,
         });
 
         if (!response.ok) {
@@ -50,6 +57,9 @@ export function AuthProvider({
         const data = await response.json();
 
         setUser(data.user);
+        if (data.token) {
+          localStorage.setItem("cf_auth_token", data.token);
+        }
       } catch (error) {
         setUser(null);
       } finally {
@@ -67,6 +77,7 @@ export function AuthProvider({
         credentials: "include",
       });
     } finally {
+      localStorage.removeItem("cf_auth_token");
       setUser(null);
     }
   };

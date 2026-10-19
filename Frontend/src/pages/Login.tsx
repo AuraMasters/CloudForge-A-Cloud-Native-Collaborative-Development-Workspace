@@ -55,6 +55,10 @@ function Login() {
         throw new Error(data.message || "Login failed");
       }
 
+      if (data.token) {
+        localStorage.setItem("cf_auth_token", data.token);
+      }
+
       showSuccess("Welcome back!");
       navigate("/dashboard");
     } catch (err: unknown) {
