@@ -1256,7 +1256,7 @@ alias dir="ls -la" 2>/dev/null || true
     }
 
     const rcFilePath = this._generateSandboxBashRc(projectId);
-    const shellArgs = isBash ? ["--rcfile", rcFilePath, "-i"] : ["-i"];
+    const shellArgs = ["-i"];
 
     const banner = `\r\n\x1b[38;2;14;165;233m┌────────────────────────────────────────────────────────┐\x1b[0m\r\n\x1b[38;2;14;165;233m│\x1b[0m  \x1b[1;32m☁ CloudForge Cloud Container Environment\x1b[0m              \x1b[38;2;14;165;233m│\x1b[0m\r\n\x1b[38;2;14;165;233m│\x1b[0m  \x1b[90mRuntime:\x1b[0m \x1b[37m${(runtime.displayName || "Node.js 20 / Linux Container").padEnd(46, " ")}\x1b[0m\x1b[38;2;14;165;233m│\x1b[0m\r\n\x1b[38;2;14;165;233m│\x1b[0m  \x1b[90mIsolated Sandbox:\x1b[0m \x1b[35m/workspace\x1b[0m                          \x1b[38;2;14;165;233m│\x1b[0m\r\n\x1b[38;2;14;165;233m└────────────────────────────────────────────────────────┘\x1b[0m\r\n\r\n`;
 
