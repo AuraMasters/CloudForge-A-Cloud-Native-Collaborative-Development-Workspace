@@ -1402,11 +1402,11 @@ alias dir="ls -la" 2>/dev/null || true
     }
 
     // Fallback: sanitized shell wrapper
-    const isWindows = process.platform === "win32";
-    const shellCmd = isWindows ? "cmd.exe" : "/bin/sh";
-    const shellArgs = isWindows ? [] : ["-i"];
+    const isWin = process.platform === "win32";
+    const fallbackCmd = isWin ? "cmd.exe" : "/bin/sh";
+    const fallbackArgs = isWin ? [] : ["-i"];
 
-    const proc = spawn(shellCmd, shellArgs, {
+    const proc = spawn(fallbackCmd, fallbackArgs, {
       cwd: workspaceDir,
       env: {
         ...process.env,
