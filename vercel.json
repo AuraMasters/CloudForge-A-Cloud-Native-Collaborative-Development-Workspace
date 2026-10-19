@@ -1,7 +1,16 @@
 {
-  "buildCommand": "cd Frontend && npm install && npm run build",
+  "version": 2,
+  "buildCommand": "npm run build --workspace=Frontend",
   "outputDirectory": "Frontend/dist",
   "rewrites": [
+    {
+      "source": "/api",
+      "destination": "/api"
+    },
+    {
+      "source": "/api/(.*)",
+      "destination": "/api"
+    },
     {
       "source": "/(.*)",
       "destination": "/index.html"
