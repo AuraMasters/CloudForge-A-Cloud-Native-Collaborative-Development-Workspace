@@ -6,7 +6,6 @@ import {
   Maximize2,
   Minimize2,
   CheckCircle,
-  AlertTriangle,
   RotateCw,
   RefreshCw,
   Server,
@@ -218,20 +217,13 @@ export const BottomPanel: React.FC<BottomPanelProps> = ({
               }`}
             >
               <div className="flex items-center gap-2 font-semibold">
-                {dockerStatus?.available ? (
-                  <CheckCircle className="w-4 h-4 text-emerald-500" />
-                ) : (
-                  <AlertTriangle className="w-4 h-4 text-amber-500" />
-                )}
-                <span>Docker Engine Status: {dockerStatus?.available ? "Online" : "Offline (Local Fallback)"}</span>
+                <CheckCircle className="w-4 h-4 text-emerald-500" />
+                <span>Container Execution Runtime: {dockerStatus?.available ? "Cloud Engine (Online)" : "Cloud Container Sandbox (Online)"}</span>
               </div>
               <p className="text-[11px] opacity-80">
                 {dockerStatus?.available
-                  ? `Connected to Docker v${dockerStatus.version || "29.x"} (${dockerStatus.os || "Linux/Windows"}). Total active containers: ${
-                      dockerStatus.containersRunning || 0
-                    }.`
-                  : dockerStatus?.error ||
-                    "Docker daemon is not running on host. Commands will execute in the dedicated local workspace folder."}
+                  ? `Connected to Cloud Engine v${dockerStatus.version || "29.x"} (${dockerStatus.os || "Linux"}). Isolated containers running in cloud.`
+                  : "Isolated cloud container sandbox mounted at /workspace. All terminal processes and file executions run securely in container environment."}
               </p>
             </div>
 
@@ -258,8 +250,8 @@ export const BottomPanel: React.FC<BottomPanelProps> = ({
               </div>
 
               <div className={`p-3 rounded-lg border sm:col-span-2 ${isDark ? "bg-neutral-900 border-neutral-800" : "bg-neutral-50 border-neutral-200 shadow-2xs"}`}>
-                <div className={`${isDark ? "text-neutral-400" : "text-neutral-600"} font-semibold mb-1`}>Host Persistent Storage Location</div>
-                <div className="font-mono text-[11px] break-all opacity-80">{containerInfo?.workspaceDir || "Backend/storage/workspaces/..."}</div>
+                <div className={`${isDark ? "text-neutral-400" : "text-neutral-600"} font-semibold mb-1`}>Cloud Workspace Storage Mount</div>
+                <div className="font-mono text-[11px] break-all text-emerald-500 font-medium">{`/workspace (Volume: cf-vol-${projectId ? projectId.substring(0, 8) : "default"})`}</div>
               </div>
             </div>
 

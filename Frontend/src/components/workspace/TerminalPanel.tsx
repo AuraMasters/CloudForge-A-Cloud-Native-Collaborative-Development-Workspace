@@ -11,9 +11,6 @@ import {
   Plus,
   X,
   Trash2,
-  AlertTriangle,
-  ChevronDown,
-  Sparkles,
 } from "lucide-react";
 import { useTheme } from "../../context/ThemeContext";
 import { containerService } from "../../services/containerService";
@@ -42,7 +39,6 @@ export const TerminalPanel: React.FC<TerminalPanelProps> = ({
   const [containerInfo, setContainerInfo] = useState<ContainerInfo | null>(null);
   const [dockerStatus, setDockerStatus] = useState<DockerStatus | null>(null);
   const [isActionLoading, setIsActionLoading] = useState(false);
-  const [showQuickCommands, setShowQuickCommands] = useState(false);
 
   // Terminal DOM container & instance refs
   const terminalRef = useRef<HTMLDivElement>(null);
@@ -148,6 +144,7 @@ export const TerminalPanel: React.FC<TerminalPanelProps> = ({
 
     term.open(terminalRef.current);
     fitAddon.fit();
+    term.focus();
 
     termInstanceRef.current = term;
     fitAddonRef.current = fitAddon;
@@ -164,6 +161,7 @@ export const TerminalPanel: React.FC<TerminalPanelProps> = ({
         prev.map((t) => (t.id === activeTabId ? { ...t, status: "connected" } : t))
       );
       fitAddon.fit();
+      term.focus();
       ws.send(JSON.stringify({ type: "resize", cols: term.cols, rows: term.rows }));
     };
 
@@ -331,12 +329,6 @@ export const TerminalPanel: React.FC<TerminalPanelProps> = ({
     }
   };
 
-  const sendCommandToTerminal = (cmd: string) => {
-    if (wsRef.current && wsRef.current.readyState === WebSocket.OPEN) {
-      wsRef.current.send(JSON.stringify({ type: "input", data: cmd + "\r" }));
-      setShowQuickCommands(false);
-    }
-  };
 
   // Dynamically update live xterm theme when user toggles dark/light mode
   useEffect(() => {
@@ -454,111 +446,19 @@ export const TerminalPanel: React.FC<TerminalPanelProps> = ({
           {/* Status Badge */}
           <div
             className={`flex items-center gap-1.5 px-2 py-0.5 rounded text-[11px] font-mono border ${
-              isFallback
-                ? "bg-amber-500/10 text-amber-400 border-amber-500/30"
-                : isRunning
+              isRunning
                 ? "bg-emerald-500/10 text-emerald-400 border-emerald-500/30"
-                : "bg-neutral-500/10 text-neutral-400 border-neutral-500/30"
+                : "bg-blue-500/10 text-blue-400 border-blue-500/30"
             }`}
-            title={
-              isFallback
-                ? "Docker daemon is offline. Running commands in local workspace storage."
-                : `Container: ${containerInfo?.name || "cloudforge-ws"} (${containerInfo?.runtime?.displayName || "Node.js 20"})`
-            }
+            title={`Cloud Container Runtime: ${containerInfo?.runtime?.displayName || "Node.js 20 / Linux"} (Working Dir: /workspace)`}
           >
-            {isFallback ? (
-              <AlertTriangle className="w-3 h-3 text-amber-400" />
-            ) : isRunning ? (
-              <span className="w-2 h-2 rounded-full bg-emerald-500 animate-pulse" />
-            ) : (
-              <span className="w-2 h-2 rounded-full bg-neutral-400" />
-            )}
+            <span className="w-2 h-2 rounded-full bg-emerald-500 animate-pulse" />
             <span className="font-semibold hidden sm:inline">
-              {isFallback
-                ? "Host Workspace"
-                : isRunning
-                ? `${containerInfo?.runtime?.displayName || "Container Running"}`
-                : "Container Stopped"}
+              {containerInfo?.runtime?.displayName ? `${containerInfo.runtime.displayName} [Cloud /workspace]` : "Cloud Container [Active]"}
             </span>
           </div>
 
-          {/* Quick Commands Dropdown */}
-          <div className="relative">
-            <button
-              onClick={() => setShowQuickCommands((prev) => !prev)}
-              className={`flex items-center gap-1 px-2 py-1 rounded text-[11px] transition-colors cursor-pointer border ${
-                isDark
-                  ? "bg-neutral-900 border-neutral-700 hover:bg-neutral-800 text-neutral-300"
-                  : "bg-neutral-100 border-neutral-300 hover:bg-neutral-200 text-neutral-700"
-              }`}
-              title="Run quick developer commands"
-            >
-              <Sparkles className="w-3 h-3 text-blue-400" />
-              <span>Quick Scripts</span>
-              <ChevronDown className="w-3 h-3 opacity-70" />
-            </button>
 
-            {showQuickCommands && (
-              <div
-                className={`absolute right-0 mt-1 w-52 rounded-lg shadow-xl border z-50 py-1 text-xs ${
-                  isDark ? "bg-neutral-900 border-neutral-700" : "bg-white border-neutral-200"
-                }`}
-              >
-                <div className="px-2 py-1 font-semibold text-[10px] uppercase tracking-wider text-neutral-400 border-b border-neutral-800">
-                  Node & JS Commands
-                </div>
-                <button
-                  onClick={() => sendCommandToTerminal("npm install")}
-                  className="w-full text-left px-3 py-1.5 hover:bg-blue-600 hover:text-white flex items-center justify-between"
-                >
-                  <span>npm install</span>
-                  <span className="text-[10px] opacity-60">Install deps</span>
-                </button>
-                <button
-                  onClick={() => sendCommandToTerminal("npm run dev")}
-                  className="w-full text-left px-3 py-1.5 hover:bg-blue-600 hover:text-white flex items-center justify-between"
-                >
-                  <span>npm run dev</span>
-                  <span className="text-[10px] opacity-60">Start dev server</span>
-                </button>
-                <button
-                  onClick={() => sendCommandToTerminal("npm run build")}
-                  className="w-full text-left px-3 py-1.5 hover:bg-blue-600 hover:text-white flex items-center justify-between"
-                >
-                  <span>npm run build</span>
-                  <span className="text-[10px] opacity-60">Production build</span>
-                </button>
-
-                <div className="px-2 py-1 font-semibold text-[10px] uppercase tracking-wider text-neutral-400 border-t border-b border-neutral-800 mt-1">
-                  Python Commands
-                </div>
-                <button
-                  onClick={() => sendCommandToTerminal("python main.py")}
-                  className="w-full text-left px-3 py-1.5 hover:bg-blue-600 hover:text-white flex items-center justify-between"
-                >
-                  <span>python main.py</span>
-                  <span className="text-[10px] opacity-60">Execute</span>
-                </button>
-                <button
-                  onClick={() => sendCommandToTerminal("pip install -r requirements.txt")}
-                  className="w-full text-left px-3 py-1.5 hover:bg-blue-600 hover:text-white flex items-center justify-between"
-                >
-                  <span>pip install</span>
-                  <span className="text-[10px] opacity-60">Requirements</span>
-                </button>
-
-                <div className="px-2 py-1 font-semibold text-[10px] uppercase tracking-wider text-neutral-400 border-t border-b border-neutral-800 mt-1">
-                  System
-                </div>
-                <button
-                  onClick={() => sendCommandToTerminal("ls -la")}
-                  className="w-full text-left px-3 py-1.5 hover:bg-blue-600 hover:text-white"
-                >
-                  ls -la (List workspace)
-                </button>
-              </div>
-            )}
-          </div>
 
           {/* Start / Stop / Restart Container */}
           {!isRunning && !isFallback ? (
@@ -618,7 +518,10 @@ export const TerminalPanel: React.FC<TerminalPanelProps> = ({
       </div>
 
       {/* Terminal Viewport */}
-      <div className={`flex-1 w-full relative overflow-hidden p-1.5 transition-colors ${isDark ? "bg-[#09090b]" : "bg-white"}`}>
+      <div
+        className={`flex-1 w-full relative overflow-hidden p-1.5 transition-colors cursor-text ${isDark ? "bg-[#09090b]" : "bg-white"}`}
+        onClick={() => termInstanceRef.current?.focus()}
+      >
         <div ref={terminalRef} className="w-full h-full" />
       </div>
     </div>

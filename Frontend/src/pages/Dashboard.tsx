@@ -31,7 +31,14 @@ function Dashboard() {
   useEffect(() => {
     const loadDashboard = async () => {
       try {
-        const userResponse = await fetch(`${API_URL}/api/auth/me`, { credentials: "include" });
+        const token = localStorage.getItem("cf_auth_token");
+        const headers: Record<string, string> = {};
+        if (token) headers["Authorization"] = `Bearer ${token}`;
+
+        const userResponse = await fetch(`${API_URL}/api/auth/me`, {
+          credentials: "include",
+          headers,
+        });
         if (!userResponse.ok) {
           showError("Please sign in to access the dashboard.");
           navigate("/login");
@@ -40,7 +47,10 @@ function Dashboard() {
         const userData = await userResponse.json();
         setUser(userData.user);
 
-        const projectResponse = await fetch(`${API_URL}/api/projects`, { credentials: "include" });
+        const projectResponse = await fetch(`${API_URL}/api/projects`, {
+          credentials: "include",
+          headers,
+        });
         if (projectResponse.ok) {
           const projectData = await projectResponse.json();
           setProjects(projectData.projects || []);
