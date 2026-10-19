@@ -12,6 +12,7 @@ import previewRoutes from "./routes/previewRoutes.js";
 import terminalGateway from "./services/terminalGateway.js";
 import collaborationGateway from "./services/collaborationGateway.js";
 import collaborationService from "./services/collaborationService.js";
+import executionWorker from "./services/executionWorker.js";
 
 dotenv.config();
 
@@ -63,6 +64,24 @@ const startServer = async () => {
     process.exit(1);
   }
 
+  // Ensure default developer user exists
+  try {
+    const User = (await import("./models/User.js")).default;
+    const userCount = await User.countDocuments();
+    if (userCount === 0) {
+      const bcrypt = (await import("bcryptjs")).default;
+      const hashedPassword = await bcrypt.hash("Password123!", 12);
+      await User.create({
+        name: "Cloud Developer",
+        email: "developer@cloudforge.io",
+        password: hashedPassword,
+      });
+      console.log("Default developer account seeded: developer@cloudforge.io / Password123!");
+    }
+  } catch (seedErr) {
+    console.warn("User auto-seed check skipped:", seedErr.message);
+  }
+
   // Initialize Terminal WebSocket Gateway
   terminalGateway.init(server);
 
@@ -95,6 +114,18 @@ process.on("SIGTERM", () => handleShutdown("SIGTERM"));
 process.on("SIGINT", () => handleShutdown("SIGINT"));
 process.once("SIGUSR2", async () => {
   await handleShutdown("SIGUSR2");
+});
+
+process.on("uncaughtException", (err) => {
+  console.error("UNCAUGHT EXCEPTION in server:", err);
+});
+
+process.on("unhandledRejection", (reason, promise) => {
+  console.error("UNHANDLED REJECTION in server:", reason);
+});
+
+process.on("exit", (code) => {
+  console.log(`[SERVER LIFECYCLE] Node.js server process exiting with code: ${code}`);
 });
 
 startServer();
