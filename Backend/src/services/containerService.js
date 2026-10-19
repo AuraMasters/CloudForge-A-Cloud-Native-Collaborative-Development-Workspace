@@ -1076,64 +1076,57 @@ class ContainerService {
     const rcFileName = `.cloudforge_rc_${projectId}_${Date.now()}_${Math.random().toString(36).slice(2, 7)}.sh`;
     const rcFilePath = path.join(os.tmpdir(), rcFileName);
     const rcContent = `
-WORKSPACE_ROOT="$(builtin pwd -P)"
+WORKSPACE_ROOT="$(pwd -P 2>/dev/null || pwd)"
 
-function cd() {
-  local target="\${1:-$WORKSPACE_ROOT}"
-  if [[ "$target" == "/workspace"* ]]; then
-    target="\${WORKSPACE_ROOT}\${target#/workspace}"
-  elif [ "$target" = "/" ] || [ "$target" = "~" ]; then
-    target="$WORKSPACE_ROOT"
-  fi
+cd() {
+  target="\${1:-$WORKSPACE_ROOT}"
+  case "$target" in
+    /workspace*)
+      target="\${WORKSPACE_ROOT}\${target#/workspace}"
+      ;;
+    /|~)
+      target="$WORKSPACE_ROOT"
+      ;;
+  esac
 
-  builtin cd "$target" 2>/dev/null
+  command cd "$target" 2>/dev/null
   if [ $? -ne 0 ]; then
-    echo "bash: cd: $1: No such file or directory"
+    echo "cd: $1: No such file or directory"
     return 1
   fi
 
-  local dest
-  dest="$(builtin pwd -P)"
-  if [[ "$dest" != "$WORKSPACE_ROOT"* ]]; then
-    builtin cd "$WORKSPACE_ROOT" >/dev/null 2>&1
-  fi
+  dest="$(pwd -P 2>/dev/null || pwd)"
+  case "$dest" in
+    "$WORKSPACE_ROOT"*)
+      ;;
+    *)
+      command cd "$WORKSPACE_ROOT" >/dev/null 2>&1
+      ;;
+  esac
 }
 
-function pwd() {
-  local cur
-  cur="$(builtin pwd -P)"
-  if [[ "$cur" == "$WORKSPACE_ROOT"* ]]; then
-    local rel="\${cur#$WORKSPACE_ROOT}"
-    if [ -z "$rel" ]; then
+pwd() {
+  cur="$(pwd -P 2>/dev/null || pwd)"
+  case "$cur" in
+    "$WORKSPACE_ROOT"*)
+      rel="\${cur#$WORKSPACE_ROOT}"
+      if [ -z "$rel" ]; then
+        echo "/workspace"
+      else
+        echo "/workspace$rel"
+      fi
+      ;;
+    *)
       echo "/workspace"
-    else
-      echo "/workspace$rel"
-    fi
-  else
-    echo "/workspace"
-  fi
-}
-
-__cloudforge_ps1() {
-  local cur
-  cur="$(builtin pwd -P)"
-  if [[ "$cur" == "$WORKSPACE_ROOT"* ]]; then
-    local rel="\${cur#$WORKSPACE_ROOT}"
-    if [ -z "$rel" ]; then
-      echo "/workspace"
-    else
-      echo "/workspace$rel"
-    fi
-  else
-    echo "/workspace"
-  fi
+      ;;
+  esac
 }
 
 export WORKSPACE="/workspace"
-export HOME="/workspace"
+export HOME="$WORKSPACE_ROOT"
 export USER="developer"
-export PS1="\\[\\033[1;32m\\]developer@cloudforge\\[\\033[0m\\]:\\[\\033[1;34m\\]\\$(__cloudforge_ps1)\\[\\033[0m\\]\\$ "
-alias dir="ls -la"
+export PS1="developer@cloudforge:/workspace$ "
+alias dir="ls -la" 2>/dev/null || true
 `;
     try {
       fs.writeFileSync(rcFilePath, rcContent, "utf8");
@@ -1228,6 +1221,8 @@ alias dir="ls -la"
     // Cloud Container Sandbox interactive shell session
     // Uses Linux bash if available (Git Bash / WSL / sh) with strict path virtualization to /workspace
     let bashBin = null;
+    let isBash = false;
+
     if (process.platform === "win32") {
       const candidates = [
         "C:\\Program Files\\Git\\bin\\bash.exe",
@@ -1237,12 +1232,31 @@ alias dir="ls -la"
       for (const c of candidates) {
         if (fs.existsSync(c)) {
           bashBin = c;
+          isBash = true;
           break;
         }
       }
+      if (!bashBin) {
+        bashBin = "powershell.exe";
+        isBash = false;
+      }
     } else {
-      bashBin = "/bin/sh";
+      const candidates = ["/bin/bash", "/usr/bin/bash", "/usr/local/bin/bash"];
+      for (const c of candidates) {
+        if (fs.existsSync(c)) {
+          bashBin = c;
+          isBash = true;
+          break;
+        }
+      }
+      if (!bashBin) {
+        bashBin = "/bin/sh";
+        isBash = false;
+      }
     }
+
+    const rcFilePath = this._generateSandboxBashRc(projectId);
+    const shellArgs = isBash ? ["--rcfile", rcFilePath, "-i"] : ["-i"];
 
     const banner = `\r\n\x1b[38;2;14;165;233m┌────────────────────────────────────────────────────────┐\x1b[0m\r\n\x1b[38;2;14;165;233m│\x1b[0m  \x1b[1;32m☁ CloudForge Cloud Container Environment\x1b[0m              \x1b[38;2;14;165;233m│\x1b[0m\r\n\x1b[38;2;14;165;233m│\x1b[0m  \x1b[90mRuntime:\x1b[0m \x1b[37m${(runtime.displayName || "Node.js 20 / Linux Container").padEnd(46, " ")}\x1b[0m\x1b[38;2;14;165;233m│\x1b[0m\r\n\x1b[38;2;14;165;233m│\x1b[0m  \x1b[90mIsolated Sandbox:\x1b[0m \x1b[35m/workspace\x1b[0m                          \x1b[38;2;14;165;233m│\x1b[0m\r\n\x1b[38;2;14;165;233m└────────────────────────────────────────────────────────┘\x1b[0m\r\n\r\n`;
 
@@ -1265,9 +1279,7 @@ alias dir="ls -la"
 
     if (ptyModule && bashBin) {
       try {
-        const rcFilePath = this._generateSandboxBashRc(projectId);
-
-        const ptyProc = ptyModule.spawn(bashBin, ["--rcfile", rcFilePath, "-i"], {
+        const ptyProc = ptyModule.spawn(bashBin, shellArgs, {
           name: "xterm-256color",
           cols: cols || 80,
           rows: rows || 24,
@@ -1278,6 +1290,7 @@ alias dir="ls -la"
             WORKSPACE: "/workspace",
             HOME: workspaceDir,
             USER: "developer",
+            ENV: rcFilePath,
             TERM: "xterm-256color",
             COLORTERM: "truecolor",
           },
@@ -1331,15 +1344,14 @@ alias dir="ls -la"
     }
 
     if (bashBin) {
-      const rcFilePath = this._generateSandboxBashRc(projectId);
-
-      const proc = spawn(bashBin, ["--rcfile", rcFilePath, "-i"], {
+      const proc = spawn(bashBin, shellArgs, {
         cwd: workspaceDir,
         env: {
           ...process.env,
           WORKSPACE: "/workspace",
           HOME: workspaceDir,
           USER: "developer",
+          ENV: rcFilePath,
           TERM: "xterm-256color",
           COLORTERM: "truecolor",
         },

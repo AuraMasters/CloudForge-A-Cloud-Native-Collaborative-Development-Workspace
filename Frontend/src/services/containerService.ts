@@ -1,4 +1,4 @@
-import API_URL, { getAuthHeaders } from "../config/api";
+import API_URL, { getAuthHeaders, getWsUrl } from "../config/api";
 import {
   type ContainerInfo,
   type CommandExecResult,
@@ -10,14 +10,10 @@ class ContainerService {
    * Get WebSocket URL for the interactive container terminal
    */
   getTerminalWsUrl(projectId: string, tabId: string = "tab-1", cols: number = 80, rows: number = 24): string {
-    const wsProtocol = window.location.protocol === "https:" ? "wss:" : "ws:";
-    let host = API_URL.replace(/^https?:\/\//, "");
-    if (!host) {
-      host = window.location.host;
-    }
+    const baseWs = getWsUrl("/ws/terminal");
     const token = typeof window !== "undefined" ? localStorage.getItem("cf_auth_token") : "";
     const tokenParam = token ? `&token=${encodeURIComponent(token)}` : "";
-    return `${wsProtocol}//${host}/ws/terminal?projectId=${encodeURIComponent(projectId)}&tabId=${encodeURIComponent(
+    return `${baseWs}?projectId=${encodeURIComponent(projectId)}&tabId=${encodeURIComponent(
       tabId
     )}&cols=${cols}&rows=${rows}${tokenParam}`;
   }
