@@ -38,7 +38,9 @@ export class CollaborationClient {
     if (wsUrl.endsWith("/")) {
       wsUrl = wsUrl.slice(0, -1);
     }
-    return `${wsUrl}/ws/collaboration?projectId=${encodeURIComponent(this.projectId)}`;
+    const token = typeof window !== "undefined" ? localStorage.getItem("cf_auth_token") : "";
+    const tokenParam = token ? `&token=${encodeURIComponent(token)}` : "";
+    return `${wsUrl}/ws/collaboration?projectId=${encodeURIComponent(this.projectId)}${tokenParam}`;
   }
 
   private _initSocket(): void {
