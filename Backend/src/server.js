@@ -6,7 +6,6 @@ import connectDB, { disconnectDB } from "./config/db.js";
 import terminalGateway from "./services/terminalGateway.js";
 import collaborationGateway from "./services/collaborationGateway.js";
 import collaborationService from "./services/collaborationService.js";
-import executionWorker from "./services/executionWorker.js";
 
 dotenv.config();
 
