@@ -8,6 +8,7 @@ export interface Project {
   name: string;
   description: string;
   owner: string;
+  template?: string;
   currentBranch?: string;
   branches?: string[];
   envVariables?: EnvVariable[];
@@ -18,5 +19,6 @@ export interface Project {
 export interface CreateProjectData {
   name: string;
   description: string;
+  template?: string;
   envVariables?: EnvVariable[];
 }

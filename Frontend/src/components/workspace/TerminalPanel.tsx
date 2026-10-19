@@ -450,11 +450,11 @@ export const TerminalPanel: React.FC<TerminalPanelProps> = ({
                 ? "bg-emerald-500/10 text-emerald-400 border-emerald-500/30"
                 : "bg-blue-500/10 text-blue-400 border-blue-500/30"
             }`}
-            title={`Cloud Container Runtime: ${containerInfo?.runtime?.displayName || "Node.js 20 / Linux"} (Working Dir: /workspace)`}
+            title={`Cloud Container Runtime: ${containerInfo?.runtime?.displayName || "Cloud Sandbox"} (Working Dir: /workspace)`}
           >
             <span className="w-2 h-2 rounded-full bg-emerald-500 animate-pulse" />
             <span className="font-semibold hidden sm:inline">
-              {containerInfo?.runtime?.displayName ? `${containerInfo.runtime.displayName} [Cloud /workspace]` : "Cloud Container [Active]"}
+              {containerInfo?.runtime?.displayName ? `${containerInfo.runtime.displayName}` : "Cloud Container [Active]"}
             </span>
           </div>
 

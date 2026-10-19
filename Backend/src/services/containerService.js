@@ -174,16 +174,34 @@ class ContainerService {
    */
   async detectProjectRuntime(projectId) {
     try {
-      const files = await ProjectFile.find({ projectId }).select("name path");
+      const [files, project] = await Promise.all([
+        ProjectFile.find({ projectId }).select("name path"),
+        Project.findById(projectId).select("template name"),
+      ]);
+
+      const template = project?.template || "";
       const fileNames = files.map((f) => f.name.toLowerCase());
 
-      const hasPackageJson = fileNames.includes("package.json");
-      const hasTsConfig = fileNames.includes("tsconfig.json");
-      const hasPythonFiles = files.some(
-        (f) => f.name.endsWith(".py") || f.name === "requirements.txt" || f.name === "pyproject.toml"
+      const hasPythonFiles = fileNames.some(
+        (f) => f.endsWith(".py") || f === "requirements.txt" || f === "pyproject.toml"
       );
+      const hasGoFiles = fileNames.some(
+        (f) => f.endsWith(".go") || f === "go.mod"
+      );
+      const hasRustFiles = fileNames.some(
+        (f) => f.endsWith(".rs") || f === "cargo.toml"
+      );
+      const hasCppFiles = fileNames.some(
+        (f) => f.endsWith(".cpp") || f.endsWith(".c") || f.endsWith(".h") || f === "makefile" || f === "cmakelists.txt"
+      );
+      const hasJavaFiles = fileNames.some(
+        (f) => f.endsWith(".java") || f === "pom.xml" || f === "build.gradle"
+      );
+      const hasWebFiles = fileNames.includes("index.html") && !fileNames.includes("package.json") && !hasPythonFiles;
+      const hasPackageJson = fileNames.includes("package.json") || fileNames.includes("tsconfig.json");
 
-      if (hasPythonFiles && !hasPackageJson) {
+      // 1. Python
+      if (template === "python" || (hasPythonFiles && !hasPackageJson)) {
         return {
           runtime: "python",
           image: "python:3.11-slim",
@@ -194,7 +212,80 @@ class ContainerService {
         };
       }
 
-      if (hasPackageJson || hasTsConfig) {
+      // 2. Go (Golang)
+      if (template === "go" || hasGoFiles) {
+        return {
+          runtime: "go",
+          image: "golang:1.22-bookworm",
+          version: "1.22",
+          displayName: "Go 1.22",
+          defaultCommand: "go",
+          entrypoint: "/bin/sh",
+        };
+      }
+
+      // 3. Rust
+      if (template === "rust" || hasRustFiles) {
+        return {
+          runtime: "rust",
+          image: "rust:1.76-slim",
+          version: "1.76",
+          displayName: "Rust 1.76",
+          defaultCommand: "cargo",
+          entrypoint: "/bin/sh",
+        };
+      }
+
+      // 4. C / C++
+      if (template === "cpp" || (hasCppFiles && !hasPackageJson)) {
+        return {
+          runtime: "cpp",
+          image: "gcc:12-bookworm",
+          version: "GCC 12",
+          displayName: "C / C++ (GCC 12)",
+          defaultCommand: "make",
+          entrypoint: "/bin/sh",
+        };
+      }
+
+      // 5. Java
+      if (template === "java" || (hasJavaFiles && !hasPackageJson)) {
+        return {
+          runtime: "java",
+          image: "openjdk:17-slim",
+          version: "17",
+          displayName: "Java 17 (OpenJDK)",
+          defaultCommand: "java",
+          entrypoint: "/bin/sh",
+        };
+      }
+
+      // 6. Static Web
+      if (template === "web" || hasWebFiles) {
+        return {
+          runtime: "web",
+          image: "nginx:alpine",
+          version: "HTML5/CSS3",
+          displayName: "Static Web (HTML5 & CSS)",
+          defaultCommand: "sh",
+          entrypoint: "/bin/sh",
+        };
+      }
+
+      // 7. Blank / Custom
+      if (template === "blank" && files.length <= 1) {
+        return {
+          runtime: "generic",
+          image: "ubuntu:22.04",
+          version: "22.04",
+          displayName: "CloudForge Cloud Container",
+          defaultCommand: "sh",
+          entrypoint: "/bin/sh",
+        };
+      }
+
+      // 8. Node.js & TypeScript
+      if (template === "node" || hasPackageJson || fileNames.some((f) => f.endsWith(".js") || f.endsWith(".ts"))) {
         return {
           runtime: "node",
           image: "node:20-bookworm-slim",
@@ -207,19 +298,19 @@ class ContainerService {
 
       return {
         runtime: "generic",
-        image: "node:20-bookworm-slim",
-        version: "20.x",
-        displayName: "CloudForge Standard Runtime",
+        image: "ubuntu:22.04",
+        version: "22.04",
+        displayName: "CloudForge Cloud Container",
         defaultCommand: "sh",
         entrypoint: "/bin/sh",
       };
     } catch {
       return {
-        runtime: "node",
-        image: "node:20-bookworm-slim",
-        version: "20.x",
-        displayName: "Node.js 20 (Default)",
-        defaultCommand: "npm",
+        runtime: "generic",
+        image: "ubuntu:22.04",
+        version: "22.04",
+        displayName: "CloudForge Cloud Container",
+        defaultCommand: "sh",
         entrypoint: "/bin/sh",
       };
     }
@@ -1258,7 +1349,7 @@ alias dir="ls -la" 2>/dev/null || true
     const rcFilePath = this._generateSandboxBashRc(projectId);
     const shellArgs = ["-i"];
 
-    const banner = `\r\n\x1b[38;2;14;165;233m┌────────────────────────────────────────────────────────┐\x1b[0m\r\n\x1b[38;2;14;165;233m│\x1b[0m  \x1b[1;32m☁ CloudForge Cloud Container Environment\x1b[0m              \x1b[38;2;14;165;233m│\x1b[0m\r\n\x1b[38;2;14;165;233m│\x1b[0m  \x1b[90mRuntime:\x1b[0m \x1b[37m${(runtime.displayName || "Node.js 20 / Linux Container").padEnd(46, " ")}\x1b[0m\x1b[38;2;14;165;233m│\x1b[0m\r\n\x1b[38;2;14;165;233m│\x1b[0m  \x1b[90mIsolated Sandbox:\x1b[0m \x1b[35m/workspace\x1b[0m                          \x1b[38;2;14;165;233m│\x1b[0m\r\n\x1b[38;2;14;165;233m└────────────────────────────────────────────────────────┘\x1b[0m\r\n\r\n`;
+    const banner = `\r\n\x1b[38;2;14;165;233m┌────────────────────────────────────────────────────────┐\x1b[0m\r\n\x1b[38;2;14;165;233m│\x1b[0m  \x1b[1;32m☁ CloudForge Cloud Container Environment\x1b[0m              \x1b[38;2;14;165;233m│\x1b[0m\r\n\x1b[38;2;14;165;233m│\x1b[0m  \x1b[90mRuntime:\x1b[0m \x1b[37m${(runtime.displayName || "CloudForge Linux Container").padEnd(46, " ")}\x1b[0m\x1b[38;2;14;165;233m│\x1b[0m\r\n\x1b[38;2;14;165;233m│\x1b[0m  \x1b[90mIsolated Sandbox:\x1b[0m \x1b[35m/workspace\x1b[0m                          \x1b[38;2;14;165;233m│\x1b[0m\r\n\x1b[38;2;14;165;233m└────────────────────────────────────────────────────────┘\x1b[0m\r\n\r\n`;
 
     const sanitizeChunk = (chunk) => {
       let str = chunk.toString();

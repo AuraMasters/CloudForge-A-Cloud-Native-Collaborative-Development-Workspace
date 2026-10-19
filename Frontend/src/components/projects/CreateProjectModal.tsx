@@ -3,13 +3,80 @@ import { useAlert } from "../../hooks/useAlert";
 import { useTheme } from "../../context/ThemeContext";
 import API_URL, { getAuthHeaders } from "../../config/api";
 import { type CreateProjectData, type Project } from "../../types/project";
-import { Sparkles, FolderPlus, X } from "lucide-react";
+import { Sparkles, FolderPlus, X, Check } from "lucide-react";
 
 interface CreateProjectModalProps {
   isOpen: boolean;
   onClose: () => void;
   onCreated: (project: Project) => void;
 }
+
+const RUNTIME_TEMPLATES = [
+  {
+    id: "node",
+    name: "Node.js & TS",
+    icon: "⚡",
+    badge: "Node 20",
+    color: "#3178c6",
+    desc: "JavaScript, TypeScript, Express, or full-stack APIs",
+  },
+  {
+    id: "python",
+    name: "Python",
+    icon: "🐍",
+    badge: "Python 3.11",
+    color: "#3572A5",
+    desc: "FastAPI, Flask, scripts, or data processing",
+  },
+  {
+    id: "go",
+    name: "Go (Golang)",
+    icon: "🐹",
+    badge: "Go 1.22",
+    color: "#00ADD8",
+    desc: "High-performance microservices and CLI tools",
+  },
+  {
+    id: "rust",
+    name: "Rust",
+    icon: "🦀",
+    badge: "Rust 1.76",
+    color: "#dea584",
+    desc: "Memory-safe systems programming with Cargo",
+  },
+  {
+    id: "cpp",
+    name: "C / C++",
+    icon: "⚙️",
+    badge: "GCC 12",
+    color: "#f34b7d",
+    desc: "Native C and C++ programs with Makefile",
+  },
+  {
+    id: "java",
+    name: "Java",
+    icon: "☕",
+    badge: "Java 17",
+    color: "#b07219",
+    desc: "Enterprise Java apps with OpenJDK 17",
+  },
+  {
+    id: "web",
+    name: "Static Web",
+    icon: "🌐",
+    badge: "HTML5/CSS",
+    color: "#e34c26",
+    desc: "HTML5, CSS3, and JavaScript frontend apps",
+  },
+  {
+    id: "blank",
+    name: "Blank",
+    icon: "📁",
+    badge: "Custom",
+    color: "#6b7280",
+    desc: "Empty workspace to build from scratch",
+  },
+];
 
 function CreateProjectModal({
   isOpen,
@@ -22,6 +89,7 @@ function CreateProjectModal({
   const [form, setForm] = useState<CreateProjectData>({
     name: "",
     description: "",
+    template: "node",
   });
 
   const [loading, setLoading] = useState(false);
@@ -43,6 +111,7 @@ function CreateProjectModal({
         body: JSON.stringify({
           name: form.name.trim(),
           description: form.description?.trim() || "",
+          template: form.template || "node",
         }),
       });
 
@@ -52,11 +121,11 @@ function CreateProjectModal({
         return;
       }
 
-      showSuccess(`Created "${data.project.name}" workspace`);
+      showSuccess(`Created "${data.project.name}" workspace (${form.template?.toUpperCase() || "NODE"})`);
       onCreated(data.project);
       onClose();
-      setForm({ name: "", description: "" });
-    } catch (error) {
+      setForm({ name: "", description: "", template: "node" });
+    } catch {
       showError("Failed to create project. Please try again.");
     } finally {
       setLoading(false);
@@ -65,9 +134,12 @@ function CreateProjectModal({
 
   return (
     <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/80 backdrop-blur-xs p-4 animate-in fade-in">
-      <div className={`w-full max-w-md rounded-2xl shadow-xl border p-6 max-h-[90vh] overflow-y-auto font-sans transition-colors duration-150 ${
-        isDark ? "bg-neutral-950 border-neutral-800 text-white" : "bg-white border-neutral-200 text-black"
-      }`}>
+      <div
+        className={`w-full max-w-xl rounded-2xl shadow-2xl border p-6 max-h-[92vh] overflow-y-auto font-sans transition-colors duration-150 ${
+          isDark ? "bg-neutral-950 border-neutral-800 text-white" : "bg-white border-neutral-200 text-black"
+        }`}
+      >
+        {/* Header */}
         <div className="flex items-center justify-between mb-5">
           <div className="flex items-center gap-2.5">
             <div className="p-2 rounded-xl bg-blue-600/10 text-blue-500 border border-blue-500/20">
@@ -78,7 +150,7 @@ function CreateProjectModal({
                 Create New Project
               </h3>
               <p className={`text-xs mt-0.5 ${isDark ? "text-neutral-400" : "text-neutral-500"}`}>
-                Create an empty project workspace.
+                Select a language runtime or start with a custom template.
               </p>
             </div>
           </div>
@@ -87,7 +159,9 @@ function CreateProjectModal({
             onClick={onClose}
             disabled={loading}
             className={`p-1.5 rounded-lg disabled:opacity-50 transition-colors cursor-pointer ${
-              isDark ? "text-neutral-400 hover:text-white hover:bg-neutral-900" : "text-neutral-500 hover:text-black hover:bg-neutral-100"
+              isDark
+                ? "text-neutral-400 hover:text-white hover:bg-neutral-900"
+                : "text-neutral-500 hover:text-black hover:bg-neutral-100"
             }`}
           >
             <X className="w-5 h-5" strokeWidth={2.3} />
@@ -95,11 +169,14 @@ function CreateProjectModal({
         </div>
 
         <div className="space-y-4">
+          {/* Project Name */}
           <div>
-            <label className={`block text-xs font-bold uppercase tracking-wider mb-1.5 ${
-              isDark ? "text-neutral-300" : "text-neutral-700"
-            }`}>
-              Project Name
+            <label
+              className={`block text-xs font-bold uppercase tracking-wider mb-1.5 ${
+                isDark ? "text-neutral-300" : "text-neutral-700"
+              }`}
+            >
+              Project Name <span className="text-red-500">*</span>
             </label>
             <input
               type="text"
@@ -111,15 +188,84 @@ function CreateProjectModal({
               disabled={loading}
               autoFocus
               className={`w-full px-3.5 py-2.5 border rounded-xl outline-none text-sm focus:ring-2 focus:ring-blue-500 focus:border-blue-500 font-medium ${
-                isDark ? "bg-black border-neutral-700 text-white placeholder-neutral-500" : "bg-white border-neutral-300 text-black placeholder-neutral-400"
+                isDark
+                  ? "bg-black border-neutral-700 text-white placeholder-neutral-500"
+                  : "bg-white border-neutral-300 text-black placeholder-neutral-400"
               }`}
             />
           </div>
 
+          {/* Runtime / Language Selector */}
           <div>
-            <label className={`block text-xs font-bold uppercase tracking-wider mb-1.5 ${
-              isDark ? "text-neutral-300" : "text-neutral-700"
-            }`}>
+            <label
+              className={`block text-xs font-bold uppercase tracking-wider mb-2 ${
+                isDark ? "text-neutral-300" : "text-neutral-700"
+              }`}
+            >
+              Choose Runtime & Language
+            </label>
+            <div className="grid grid-cols-2 sm:grid-cols-4 gap-2">
+              {RUNTIME_TEMPLATES.map((tmpl) => {
+                const isSelected = (form.template || "node") === tmpl.id;
+                return (
+                  <button
+                    key={tmpl.id}
+                    type="button"
+                    onClick={() => setForm((prev) => ({ ...prev, template: tmpl.id }))}
+                    disabled={loading}
+                    className={`relative p-2.5 rounded-xl border text-left transition-all cursor-pointer flex flex-col justify-between ${
+                      isSelected
+                        ? isDark
+                          ? "bg-blue-950/30 border-blue-500 ring-1 ring-blue-500/50 shadow-xs"
+                          : "bg-blue-50/80 border-blue-500 ring-1 ring-blue-500/50 shadow-xs"
+                        : isDark
+                        ? "bg-neutral-900/40 border-neutral-800 hover:border-neutral-700 hover:bg-neutral-900"
+                        : "bg-neutral-50/60 border-neutral-200 hover:border-neutral-300 hover:bg-neutral-100"
+                    }`}
+                  >
+                    {isSelected && (
+                      <span className="absolute top-2 right-2 flex items-center justify-center w-4 h-4 rounded-full bg-blue-600 text-white">
+                        <Check className="w-2.5 h-2.5 stroke-[3]" />
+                      </span>
+                    )}
+                    <div>
+                      <div className="flex items-center gap-1.5 mb-1">
+                        <span className="text-base">{tmpl.icon}</span>
+                        <span className="text-xs font-bold truncate">{tmpl.name}</span>
+                      </div>
+                      <p
+                        className={`text-[10px] line-clamp-2 leading-tight ${
+                          isDark ? "text-neutral-400" : "text-neutral-500"
+                        }`}
+                      >
+                        {tmpl.desc}
+                      </p>
+                    </div>
+                    <div className="mt-2">
+                      <span
+                        className="text-[9px] font-mono px-1.5 py-0.5 rounded font-bold"
+                        style={{
+                          backgroundColor: `${tmpl.color}20`,
+                          color: tmpl.color,
+                          border: `1px solid ${tmpl.color}40`,
+                        }}
+                      >
+                        {tmpl.badge}
+                      </span>
+                    </div>
+                  </button>
+                );
+              })}
+            </div>
+          </div>
+
+          {/* Description */}
+          <div>
+            <label
+              className={`block text-xs font-bold uppercase tracking-wider mb-1.5 ${
+                isDark ? "text-neutral-300" : "text-neutral-700"
+              }`}
+            >
               Description (Optional)
             </label>
             <textarea
@@ -128,23 +274,30 @@ function CreateProjectModal({
                 setForm((prev) => ({ ...prev, description: e.target.value }))
               }
               placeholder="Describe your workspace project..."
-              rows={3}
+              rows={2}
               disabled={loading}
               className={`w-full px-3.5 py-2.5 border rounded-xl outline-none text-sm resize-none focus:ring-2 focus:ring-blue-500 focus:border-blue-500 ${
-                isDark ? "bg-black border-neutral-700 text-white placeholder-neutral-500" : "bg-white border-neutral-300 text-black placeholder-neutral-400"
+                isDark
+                  ? "bg-black border-neutral-700 text-white placeholder-neutral-500"
+                  : "bg-white border-neutral-300 text-black placeholder-neutral-400"
               }`}
             />
           </div>
         </div>
 
-        <div className={`flex justify-end gap-3 mt-6 pt-4 border-t ${
-          isDark ? "border-neutral-800" : "border-neutral-100"
-        }`}>
+        {/* Action Buttons */}
+        <div
+          className={`flex justify-end gap-3 mt-6 pt-4 border-t ${
+            isDark ? "border-neutral-800" : "border-neutral-100"
+          }`}
+        >
           <button
             onClick={onClose}
             disabled={loading}
             className={`px-4 py-2 rounded-xl border text-sm font-medium transition-colors cursor-pointer ${
-              isDark ? "border-neutral-700 text-neutral-300 hover:bg-neutral-900" : "border-neutral-300 text-neutral-700 hover:bg-neutral-50"
+              isDark
+                ? "border-neutral-700 text-neutral-300 hover:bg-neutral-900"
+                : "border-neutral-300 text-neutral-700 hover:bg-neutral-50"
             }`}
           >
             Cancel
