@@ -1,0 +1,599 @@
+/* ==========================================================================
+   GitHub-Grade Markdown Viewer Stylesheet
+   Supports Dark (Pitch Black / GitHub Dark) and Light (GitHub Light)
+   Includes PrismJS syntax highlighting tokens & GitHub alert callouts
+   ========================================================================== */
+
+.markdown-body {
+  font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", "Noto Sans", Helvetica, Arial, sans-serif, "Apple Color Emoji", "Segoe UI Emoji";
+  font-size: 14.5px;
+  line-height: 1.65;
+  word-wrap: break-word;
+  transition: color 0.15s ease, background-color 0.15s ease;
+}
+
+/* --------------------------------------------------------------------------
+   CSS Variables for Theme Switching
+   -------------------------------------------------------------------------- */
+.markdown-body.theme-dark {
+  --gh-bg: #000000;
+  --gh-bg-secondary: #0d1117;
+  --gh-bg-subtle: rgba(255, 255, 255, 0.03);
+  --gh-fg: #e6edf3;
+  --gh-fg-heading: #f0f6fc;
+  --gh-fg-bold: #ffffff;
+  --gh-fg-muted: #848d97;
+  --gh-border: #30363d;
+  --gh-border-subtle: #21262d;
+  --gh-link: #58a6ff;
+  --gh-link-hover: #79c0ff;
+  --gh-inline-code-bg: rgba(110, 118, 129, 0.35);
+  --gh-inline-code-border: rgba(240, 246, 252, 0.15);
+  --gh-inline-code-color: #f0f6fc;
+  --gh-code-block-bg: #0d1117;
+  --gh-code-header-bg: #161b22;
+  --gh-table-th-bg: #161b22;
+  --gh-table-zebra-bg: rgba(255, 255, 255, 0.02);
+  --gh-hr: #30363d;
+}
+
+.markdown-body.theme-light {
+  --gh-bg: #ffffff;
+  --gh-bg-secondary: #f6f8fa;
+  --gh-bg-subtle: rgba(0, 0, 0, 0.02);
+  --gh-fg: #1f2328;
+  --gh-fg-heading: #1f2328;
+  --gh-fg-bold: #090d11;
+  --gh-fg-muted: #656d76;
+  --gh-border: #d0d7de;
+  --gh-border-subtle: #eaeef2;
+  --gh-link: #0969da;
+  --gh-link-hover: #0550ae;
+  --gh-inline-code-bg: rgba(175, 184, 193, 0.22);
+  --gh-inline-code-border: rgba(31, 35, 40, 0.15);
+  --gh-inline-code-color: #1f2328;
+  --gh-code-block-bg: #f6f8fa;
+  --gh-code-header-bg: #eef1f5;
+  --gh-table-th-bg: #f6f8fa;
+  --gh-table-zebra-bg: rgba(0, 0, 0, 0.02);
+  --gh-hr: #d0d7de;
+}
+
+.markdown-body {
+  color: var(--gh-fg);
+}
+
+/* --------------------------------------------------------------------------
+   Headings & Anchors
+   -------------------------------------------------------------------------- */
+.markdown-body h1,
+.markdown-body h2,
+.markdown-body h3,
+.markdown-body h4,
+.markdown-body h5,
+.markdown-body h6 {
+  color: var(--gh-fg-heading);
+  font-weight: 700;
+  line-height: 1.3;
+  margin-top: 1.5em;
+  margin-bottom: 0.6em;
+  scroll-margin-top: 2rem;
+  position: relative;
+}
+
+.markdown-body h1 {
+  font-size: 2rem;
+  padding-bottom: 0.35em;
+  border-bottom: 1px solid var(--gh-border);
+  margin-top: 0.2em;
+}
+
+.markdown-body h2 {
+  font-size: 1.5rem;
+  padding-bottom: 0.3em;
+  border-bottom: 1px solid var(--gh-border);
+  margin-top: 1.3em;
+}
+
+.markdown-body h3 {
+  font-size: 1.25rem;
+  margin-top: 1.2em;
+}
+
+.markdown-body h4 {
+  font-size: 1.05rem;
+  font-weight: 600;
+}
+
+.markdown-body h5 {
+  font-size: 0.92rem;
+  font-weight: 600;
+}
+
+.markdown-body h6 {
+  font-size: 0.85rem;
+  font-weight: 600;
+  color: var(--gh-fg-muted);
+}
+
+/* --------------------------------------------------------------------------
+   Bold & Emphasis
+   -------------------------------------------------------------------------- */
+.markdown-body strong,
+.markdown-body b {
+  font-weight: 700 !important;
+  color: var(--gh-fg-bold) !important;
+  letter-spacing: -0.01em;
+}
+
+.markdown-body em,
+.markdown-body i {
+  font-style: italic;
+}
+
+/* --------------------------------------------------------------------------
+   Paragraphs & Spacing
+   -------------------------------------------------------------------------- */
+.markdown-body p {
+  margin-top: 0;
+  margin-bottom: 1rem;
+  line-height: 1.65;
+}
+
+/* --------------------------------------------------------------------------
+   Links
+   -------------------------------------------------------------------------- */
+.markdown-body a {
+  color: var(--gh-link);
+  text-decoration: underline;
+  text-underline-offset: 3px;
+  text-decoration-thickness: 1px;
+  transition: color 0.15s ease, text-decoration-color 0.15s ease;
+}
+
+.markdown-body a:hover {
+  color: var(--gh-link-hover);
+  text-decoration-thickness: 1.5px;
+}
+
+/* --------------------------------------------------------------------------
+   Inline Code
+   -------------------------------------------------------------------------- */
+.markdown-body :not(pre) > code {
+  font-family: 'JetBrains Mono', 'Fira Code', 'Cascadia Code', ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, monospace !important;
+  font-size: 0.85em;
+  font-weight: 550;
+  padding: 0.2em 0.45em;
+  margin: 0 0.15em;
+  background-color: var(--gh-inline-code-bg);
+  border: 1px solid var(--gh-inline-code-border);
+  border-radius: 6px;
+  color: var(--gh-inline-code-color);
+  white-space: break-spaces;
+  vertical-align: baseline;
+}
+
+/* --------------------------------------------------------------------------
+   Block Code & GitHub Header Container
+   -------------------------------------------------------------------------- */
+.markdown-body .gh-code-block {
+  margin: 1.25rem 0;
+  border: 1px solid var(--gh-border);
+  border-radius: 10px;
+  overflow: hidden;
+  background-color: var(--gh-code-block-bg);
+  box-shadow: 0 1px 3px rgba(0, 0, 0, 0.08);
+}
+
+.markdown-body .gh-code-header {
+  background-color: var(--gh-code-header-bg);
+  border-bottom: 1px solid var(--gh-border);
+  color: var(--gh-fg-muted);
+}
+
+.markdown-body .gh-code-copy-btn {
+  background-color: transparent;
+  border: 1px solid var(--gh-border);
+  color: var(--gh-fg-muted);
+  border-radius: 6px;
+  transition: all 0.15s ease;
+}
+
+.markdown-body .gh-code-copy-btn:hover {
+  color: var(--gh-fg);
+  border-color: var(--gh-link);
+  background-color: var(--gh-bg-subtle);
+}
+
+.markdown-body pre.gh-code-pre {
+  margin: 0;
+  padding: 1rem 1.15rem;
+  overflow-x: auto;
+  font-family: 'JetBrains Mono', 'Fira Code', 'Cascadia Code', ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, monospace !important;
+  font-size: 12.5px;
+  line-height: 1.55;
+  tab-size: 2;
+  background-color: transparent;
+}
+
+.markdown-body pre.gh-code-pre code {
+  font-family: inherit;
+  font-size: inherit;
+  background: transparent;
+  border: none;
+  padding: 0;
+  margin: 0;
+  color: inherit;
+  border-radius: 0;
+}
+
+/* --------------------------------------------------------------------------
+   Lists (Unordered, Ordered, Task Lists)
+   -------------------------------------------------------------------------- */
+.markdown-body ul {
+  list-style-type: disc !important;
+  padding-left: 1.75em !important;
+  margin-top: 0.5em !important;
+  margin-bottom: 1em !important;
+}
+
+.markdown-body ol {
+  list-style-type: decimal !important;
+  padding-left: 1.75em !important;
+  margin-top: 0.5em !important;
+  margin-bottom: 1em !important;
+}
+
+.markdown-body li {
+  margin-top: 0.28em !important;
+  margin-bottom: 0.28em !important;
+  line-height: 1.6;
+}
+
+.markdown-body li > p {
+  margin-top: 0.2em !important;
+  margin-bottom: 0.2em !important;
+}
+
+.markdown-body ul ul,
+.markdown-body ul ol,
+.markdown-body ol ul,
+.markdown-body ol ol {
+  margin-top: 0.2em !important;
+  margin-bottom: 0.2em !important;
+}
+
+.markdown-body ul ul {
+  list-style-type: circle !important;
+}
+
+.markdown-body ul ul ul {
+  list-style-type: square !important;
+}
+
+/* Task Lists */
+.markdown-body li:has(input[type="checkbox"]) {
+  list-style-type: none !important;
+  margin-left: -1.25em;
+  display: flex;
+  align-items: baseline;
+  gap: 0.45em;
+}
+
+.markdown-body input[type="checkbox"] {
+  accent-color: #2f81f7;
+  cursor: pointer;
+  margin: 0;
+  transform: translateY(1.5px);
+}
+
+/* --------------------------------------------------------------------------
+   GFM Tables
+   -------------------------------------------------------------------------- */
+.markdown-body .gh-table-container {
+  width: 100%;
+  overflow-x: auto;
+  margin: 1.25rem 0;
+  border: 1px solid var(--gh-border);
+  border-radius: 8px;
+}
+
+.markdown-body table {
+  width: 100% !important;
+  border-collapse: collapse !important;
+  font-size: 13.5px !important;
+  margin: 0 !important;
+}
+
+.markdown-body th {
+  background-color: var(--gh-table-th-bg) !important;
+  color: var(--gh-fg-heading) !important;
+  font-weight: 600 !important;
+  text-align: left !important;
+  padding: 8px 14px !important;
+  border-bottom: 1px solid var(--gh-border) !important;
+  border-right: 1px solid var(--gh-border-subtle) !important;
+}
+
+.markdown-body th:last-child {
+  border-right: none !important;
+}
+
+.markdown-body td {
+  padding: 8px 14px !important;
+  border-top: 1px solid var(--gh-border-subtle) !important;
+  border-right: 1px solid var(--gh-border-subtle) !important;
+}
+
+.markdown-body td:last-child {
+  border-right: none !important;
+}
+
+.markdown-body tbody tr:nth-child(2n) td {
+  background-color: var(--gh-table-zebra-bg) !important;
+}
+
+/* --------------------------------------------------------------------------
+   Blockquotes
+   -------------------------------------------------------------------------- */
+.markdown-body blockquote {
+  border-left: 4px solid var(--gh-border) !important;
+  padding: 0.4em 1em !important;
+  margin: 1em 0 !important;
+  color: var(--gh-fg-muted) !important;
+  background-color: var(--gh-bg-subtle) !important;
+  border-radius: 0 6px 6px 0 !important;
+}
+
+.markdown-body blockquote > p:last-child {
+  margin-bottom: 0 !important;
+}
+
+/* --------------------------------------------------------------------------
+   GitHub Callout Alerts (> [!NOTE], > [!TIP], etc.)
+   -------------------------------------------------------------------------- */
+.markdown-body .gh-alert {
+  margin: 1.25rem 0;
+  padding: 0.85rem 1rem;
+  border-left-width: 4px;
+  border-left-style: solid;
+  border-radius: 0 8px 8px 0;
+  font-size: 13.5px;
+}
+
+.markdown-body .gh-alert-title {
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+  font-weight: 600;
+  font-size: 13px;
+  margin-bottom: 0.4rem;
+}
+
+.markdown-body .gh-alert-content {
+  color: var(--gh-fg);
+  line-height: 1.55;
+}
+
+.markdown-body .gh-alert-content p:last-child {
+  margin-bottom: 0;
+}
+
+/* NOTE Alert (Blue) */
+.markdown-body.theme-dark .gh-alert-note {
+  border-left-color: #2f81f7;
+  background-color: rgba(56, 139, 253, 0.1);
+}
+.markdown-body.theme-dark .gh-alert-note .gh-alert-title {
+  color: #58a6ff;
+}
+.markdown-body.theme-light .gh-alert-note {
+  border-left-color: #0969da;
+  background-color: rgba(9, 105, 218, 0.08);
+}
+.markdown-body.theme-light .gh-alert-note .gh-alert-title {
+  color: #0969da;
+}
+
+/* TIP Alert (Green) */
+.markdown-body.theme-dark .gh-alert-tip {
+  border-left-color: #3fb950;
+  background-color: rgba(63, 185, 80, 0.1);
+}
+.markdown-body.theme-dark .gh-alert-tip .gh-alert-title {
+  color: #3fb950;
+}
+.markdown-body.theme-light .gh-alert-tip {
+  border-left-color: #1a7f37;
+  background-color: rgba(26, 127, 55, 0.08);
+}
+.markdown-body.theme-light .gh-alert-tip .gh-alert-title {
+  color: #1a7f37;
+}
+
+/* IMPORTANT Alert (Purple) */
+.markdown-body.theme-dark .gh-alert-important {
+  border-left-color: #a371f7;
+  background-color: rgba(163, 113, 247, 0.1);
+}
+.markdown-body.theme-dark .gh-alert-important .gh-alert-title {
+  color: #bc8cff;
+}
+.markdown-body.theme-light .gh-alert-important {
+  border-left-color: #8250df;
+  background-color: rgba(130, 80, 223, 0.08);
+}
+.markdown-body.theme-light .gh-alert-important .gh-alert-title {
+  color: #8250df;
+}
+
+/* WARNING Alert (Amber) */
+.markdown-body.theme-dark .gh-alert-warning {
+  border-left-color: #d29922;
+  background-color: rgba(210, 153, 34, 0.1);
+}
+.markdown-body.theme-dark .gh-alert-warning .gh-alert-title {
+  color: #d29922;
+}
+.markdown-body.theme-light .gh-alert-warning {
+  border-left-color: #9a6700;
+  background-color: rgba(154, 103, 0, 0.08);
+}
+.markdown-body.theme-light .gh-alert-warning .gh-alert-title {
+  color: #9a6700;
+}
+
+/* CAUTION Alert (Red) */
+.markdown-body.theme-dark .gh-alert-caution {
+  border-left-color: #f85149;
+  background-color: rgba(248, 81, 73, 0.1);
+}
+.markdown-body.theme-dark .gh-alert-caution .gh-alert-title {
+  color: #ff7b72;
+}
+.markdown-body.theme-light .gh-alert-caution {
+  border-left-color: #cf222e;
+  background-color: rgba(207, 34, 46, 0.08);
+}
+.markdown-body.theme-light .gh-alert-caution .gh-alert-title {
+  color: #cf222e;
+}
+
+/* --------------------------------------------------------------------------
+   Horizontal Rules
+   -------------------------------------------------------------------------- */
+.markdown-body hr {
+  height: 2px;
+  padding: 0;
+  margin: 28px 0;
+  background-color: var(--gh-hr);
+  border: 0;
+}
+
+/* --------------------------------------------------------------------------
+   Images & Shields Badges
+   -------------------------------------------------------------------------- */
+.markdown-body img {
+  max-width: 100%;
+  box-sizing: content-box;
+  border-radius: 6px;
+  display: inline-block;
+  vertical-align: middle;
+}
+
+.markdown-body p > img {
+  margin-right: 0.35rem;
+}
+
+/* --------------------------------------------------------------------------
+   PrismJS Syntax Highlighting Tokens (GitHub Colors)
+   -------------------------------------------------------------------------- */
+/* DARK THEME TOKENS */
+.markdown-body.theme-dark .token.comment,
+.markdown-body.theme-dark .token.prolog,
+.markdown-body.theme-dark .token.doctype,
+.markdown-body.theme-dark .token.cdata {
+  color: #8b949e;
+  font-style: italic;
+}
+
+.markdown-body.theme-dark .token.punctuation {
+  color: #c9d1d9;
+}
+
+.markdown-body.theme-dark .token.property,
+.markdown-body.theme-dark .token.tag,
+.markdown-body.theme-dark .token.boolean,
+.markdown-body.theme-dark .token.number,
+.markdown-body.theme-dark .token.constant,
+.markdown-body.theme-dark .token.symbol {
+  color: #79c0ff;
+}
+
+.markdown-body.theme-dark .token.selector,
+.markdown-body.theme-dark .token.attr-name,
+.markdown-body.theme-dark .token.string,
+.markdown-body.theme-dark .token.char,
+.markdown-body.theme-dark .token.builtin,
+.markdown-body.theme-dark .token.inserted {
+  color: #a5d6ff;
+}
+
+.markdown-body.theme-dark .token.operator,
+.markdown-body.theme-dark .token.entity,
+.markdown-body.theme-dark .token.url,
+.markdown-body.theme-dark .token.variable {
+  color: #ff7b72;
+}
+
+.markdown-body.theme-dark .token.atrule,
+.markdown-body.theme-dark .token.attr-value,
+.markdown-body.theme-dark .token.keyword {
+  color: #ff7b72;
+  font-weight: 600;
+}
+
+.markdown-body.theme-dark .token.function,
+.markdown-body.theme-dark .token.class-name {
+  color: #d2a8ff;
+}
+
+.markdown-body.theme-dark .token.regex,
+.markdown-body.theme-dark .token.important {
+  color: #7ee787;
+}
+
+/* LIGHT THEME TOKENS */
+.markdown-body.theme-light .token.comment,
+.markdown-body.theme-light .token.prolog,
+.markdown-body.theme-light .token.doctype,
+.markdown-body.theme-light .token.cdata {
+  color: #6e7781;
+  font-style: italic;
+}
+
+.markdown-body.theme-light .token.punctuation {
+  color: #24292f;
+}
+
+.markdown-body.theme-light .token.property,
+.markdown-body.theme-light .token.tag,
+.markdown-body.theme-light .token.boolean,
+.markdown-body.theme-light .token.number,
+.markdown-body.theme-light .token.constant,
+.markdown-body.theme-light .token.symbol {
+  color: #0550ae;
+}
+
+.markdown-body.theme-light .token.selector,
+.markdown-body.theme-light .token.attr-name,
+.markdown-body.theme-light .token.string,
+.markdown-body.theme-light .token.char,
+.markdown-body.theme-light .token.builtin,
+.markdown-body.theme-light .token.inserted {
+  color: #0a3069;
+}
+
+.markdown-body.theme-light .token.operator,
+.markdown-body.theme-light .token.entity,
+.markdown-body.theme-light .token.url,
+.markdown-body.theme-light .token.variable {
+  color: #cf222e;
+}
+
+.markdown-body.theme-light .token.atrule,
+.markdown-body.theme-light .token.attr-value,
+.markdown-body.theme-light .token.keyword {
+  color: #cf222e;
+  font-weight: 600;
+}
+
+.markdown-body.theme-light .token.function,
+.markdown-body.theme-light .token.class-name {
+  color: #8250df;
+}
+
+.markdown-body.theme-light .token.regex,
+.markdown-body.theme-light .token.important {
+  color: #116329;
+}
