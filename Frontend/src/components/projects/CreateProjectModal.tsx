@@ -1,7 +1,7 @@
 import { useState } from "react";
 import { useAlert } from "../../hooks/useAlert";
 import { useTheme } from "../../context/ThemeContext";
-import API_URL from "../../config/api";
+import API_URL, { getAuthHeaders } from "../../config/api";
 import { type CreateProjectData, type Project } from "../../types/project";
 import { Sparkles, FolderPlus, X } from "lucide-react";
 
@@ -38,7 +38,7 @@ function CreateProjectModal({
       setLoading(true);
       const response = await fetch(`${API_URL}/api/projects`, {
         method: "POST",
-        headers: { "Content-Type": "application/json" },
+        headers: getAuthHeaders({ "Content-Type": "application/json" }),
         credentials: "include",
         body: JSON.stringify({
           name: form.name.trim(),

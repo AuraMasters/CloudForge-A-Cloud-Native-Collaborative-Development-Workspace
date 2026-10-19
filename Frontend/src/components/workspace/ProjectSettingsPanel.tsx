@@ -5,7 +5,7 @@ import {
   GitBranch,
   Cloud,
 } from "lucide-react";
-import API_URL from "../../config/api";
+import API_URL, { getAuthHeaders } from "../../config/api";
 import { useAlert } from "../../hooks/useAlert";
 import { type Project } from "../../types/project";
 import { useTheme } from "../../context/ThemeContext";
@@ -39,7 +39,7 @@ export const ProjectSettingsPanel: React.FC<ProjectSettingsPanelProps> = ({
       setIsSaving(true);
       const res = await fetch(`${API_URL}/api/projects/${project._id}`, {
         method: "PUT",
-        headers: { "Content-Type": "application/json" },
+        headers: getAuthHeaders({ "Content-Type": "application/json" }),
         credentials: "include",
         body: JSON.stringify({
           name: name.trim(),
@@ -66,6 +66,7 @@ export const ProjectSettingsPanel: React.FC<ProjectSettingsPanelProps> = ({
       const res = await fetch(`${API_URL}/api/projects/${project._id}`, {
         method: "DELETE",
         credentials: "include",
+        headers: getAuthHeaders(),
       });
 
       const data = await res.json();

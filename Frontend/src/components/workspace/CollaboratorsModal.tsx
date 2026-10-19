@@ -1,6 +1,6 @@
 import React, { useState, useEffect } from "react";
 import { X, UserPlus, Users, Trash2, Copy, Check, ShieldCheck, Mail, AlertCircle } from "lucide-react";
-import API_URL from "../../config/api";
+import API_URL, { getAuthHeaders } from "../../config/api";
 import { useAlert } from "../../hooks/useAlert";
 import { useTheme } from "../../context/ThemeContext";
 
@@ -41,6 +41,7 @@ export const CollaboratorsModal: React.FC<CollaboratorsModalProps> = ({
       setLoading(true);
       const res = await fetch(`${API_URL}/api/projects/${projectId}/collaborators`, {
         credentials: "include",
+        headers: getAuthHeaders(),
       });
       const data = await res.json();
       if (res.ok) {
@@ -68,7 +69,7 @@ export const CollaboratorsModal: React.FC<CollaboratorsModalProps> = ({
       setAdding(true);
       const res = await fetch(`${API_URL}/api/projects/${projectId}/collaborators`, {
         method: "POST",
-        headers: { "Content-Type": "application/json" },
+        headers: getAuthHeaders({ "Content-Type": "application/json" }),
         credentials: "include",
         body: JSON.stringify({ email: email.trim() }),
       });
@@ -97,6 +98,7 @@ export const CollaboratorsModal: React.FC<CollaboratorsModalProps> = ({
       const res = await fetch(`${API_URL}/api/projects/${projectId}/collaborators/${userId}`, {
         method: "DELETE",
         credentials: "include",
+        headers: getAuthHeaders(),
       });
       const data = await res.json();
       if (!res.ok) throw new Error(data.message || "Failed to remove collaborator");

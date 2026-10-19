@@ -19,9 +19,37 @@ dotenv.config();
 const app = express();
 const server = http.createServer(app);
 
+const allowedOrigins = [
+  process.env.CLIENT_URL,
+  "http://localhost:5173",
+  "http://localhost:3000",
+  "http://localhost:5000",
+].filter(Boolean);
+
 app.use(
   cors({
-    origin: process.env.CLIENT_URL || "http://localhost:5173",
+    origin: (origin, callback) => {
+      // Allow requests with no origin (e.g. mobile apps, curl, server-to-server)
+      if (!origin) return callback(null, true);
+
+      // Allow configured origins
+      if (allowedOrigins.includes(origin)) {
+        return callback(null, true);
+      }
+
+      // Allow all Vercel deployments and preview URLs
+      if (origin.endsWith(".vercel.app") || origin.includes(".vercel.app")) {
+        return callback(null, true);
+      }
+
+      // Allow any localhost origin during dev
+      if (/^https?:\/\/localhost(:\d+)?$/.test(origin)) {
+        return callback(null, true);
+      }
+
+      // Default allow for deployed frontend flexibility
+      return callback(null, true);
+    },
     credentials: true,
   })
 );
@@ -67,13 +95,14 @@ const startServer = async () => {
   // Ensure default developer user exists
   try {
     const User = (await import("./models/User.js")).default;
-    const userCount = await User.countDocuments();
-    if (userCount === 0) {
-      const bcrypt = (await import("bcryptjs")).default;
+    const bcrypt = (await import("bcryptjs")).default;
+    const seedEmail = "developer@cloudforge.io";
+    const existingSeed = await User.findOne({ email: seedEmail });
+    if (!existingSeed) {
       const hashedPassword = await bcrypt.hash("Password123!", 12);
       await User.create({
         name: "Cloud Developer",
-        email: "developer@cloudforge.io",
+        email: seedEmail,
         password: hashedPassword,
       });
       console.log("Default developer account seeded: developer@cloudforge.io / Password123!");

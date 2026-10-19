@@ -34,7 +34,11 @@ function Register() {
   const handleSubmit = async (e: FormEvent) => {
     e.preventDefault();
 
-    if (!form.name || !form.email || !form.password) {
+    const name = form.name.trim();
+    const email = form.email.trim().toLowerCase();
+    const password = form.password;
+
+    if (!name || !email || !password) {
       showError("Please fill in all fields");
       return;
     }
@@ -48,7 +52,11 @@ function Register() {
           "Content-Type": "application/json",
         },
         credentials: "include",
-        body: JSON.stringify(form),
+        body: JSON.stringify({
+          name,
+          email,
+          password,
+        }),
       });
 
       const data = await res.json();

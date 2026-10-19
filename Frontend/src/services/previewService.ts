@@ -1,4 +1,4 @@
-import API_URL from "../config/api";
+import API_URL, { getAuthHeaders } from "../config/api";
 import { type PreviewInfoResponse } from "../types/preview";
 
 class PreviewService {
@@ -16,6 +16,7 @@ class PreviewService {
   async getPreviewInfo(projectId: string): Promise<PreviewInfoResponse> {
     const res = await fetch(`${API_URL}/api/projects/${projectId}/preview/info`, {
       credentials: "include",
+      headers: getAuthHeaders(),
     });
     if (!res.ok) {
       const data = await res.json().catch(() => ({}));
@@ -34,7 +35,7 @@ class PreviewService {
   ): Promise<{ message: string; port: number; activePorts: any[] }> {
     const res = await fetch(`${API_URL}/api/projects/${projectId}/preview/start`, {
       method: "POST",
-      headers: { "Content-Type": "application/json" },
+      headers: getAuthHeaders({ "Content-Type": "application/json" }),
       credentials: "include",
       body: JSON.stringify({ customCommand, port }),
     });
@@ -51,7 +52,7 @@ class PreviewService {
   async stopDevServer(projectId: string, port?: number): Promise<{ message: string }> {
     const res = await fetch(`${API_URL}/api/projects/${projectId}/preview/stop`, {
       method: "POST",
-      headers: { "Content-Type": "application/json" },
+      headers: getAuthHeaders({ "Content-Type": "application/json" }),
       credentials: "include",
       body: JSON.stringify({ port }),
     });

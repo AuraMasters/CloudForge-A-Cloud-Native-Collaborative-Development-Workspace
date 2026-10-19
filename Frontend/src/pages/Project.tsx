@@ -1,7 +1,7 @@
 import { useEffect, useMemo, useState } from "react";
 import { useNavigate } from "react-router-dom";
 import { Plus } from "lucide-react";
-import API_URL from "../config/api";
+import API_URL, { getAuthHeaders } from "../config/api";
 import { useAlert } from "../hooks/useAlert";
 import { useTheme } from "../context/ThemeContext";
 import Navbar from "../components/layout/Navbar";
@@ -33,7 +33,10 @@ function Projects() {
   useEffect(() => {
     const loadProjects = async () => {
       try {
-        const userResponse = await fetch(`${API_URL}/api/auth/me`, { credentials: "include" });
+        const userResponse = await fetch(`${API_URL}/api/auth/me`, {
+          credentials: "include",
+          headers: getAuthHeaders(),
+        });
         if (!userResponse.ok) {
           showError("Please sign in to access your projects.");
           navigate("/login");
@@ -42,7 +45,10 @@ function Projects() {
         const userData = await userResponse.json();
         setUser(userData.user);
 
-        const projectResponse = await fetch(`${API_URL}/api/projects`, { credentials: "include" });
+        const projectResponse = await fetch(`${API_URL}/api/projects`, {
+          credentials: "include",
+          headers: getAuthHeaders(),
+        });
         if (!projectResponse.ok) throw new Error("Failed to fetch projects");
         const projectData = await projectResponse.json();
         setProjects(projectData.projects || []);
@@ -78,6 +84,7 @@ function Projects() {
       const response = await fetch(`${API_URL}/api/projects/${deletingProject._id}`, {
         method: "DELETE",
         credentials: "include",
+        headers: getAuthHeaders(),
       });
       const data = await response.json();
       if (!response.ok) {

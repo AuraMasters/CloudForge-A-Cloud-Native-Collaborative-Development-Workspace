@@ -1,4 +1,4 @@
-import API_URL from "../config/api";
+import API_URL, { getAuthHeaders } from "../config/api";
 
 export interface DeploymentLog {
   timestamp: string;
@@ -47,9 +47,9 @@ export const deployService = {
   ): Promise<{ success: boolean; deployment: DeploymentRecord; message: string }> {
     const res = await fetch(`${API_URL}/api/projects/${projectId}/deploy`, {
       method: "POST",
-      headers: {
+      headers: getAuthHeaders({
         "Content-Type": "application/json",
-      },
+      }),
       credentials: "include",
       body: JSON.stringify(options),
     });
@@ -69,6 +69,7 @@ export const deployService = {
   ): Promise<{ success: boolean; deployments: DeploymentRecord[] }> {
     const res = await fetch(`${API_URL}/api/projects/${projectId}/deploy`, {
       credentials: "include",
+      headers: getAuthHeaders(),
     });
 
     const data = await res.json();
@@ -87,6 +88,7 @@ export const deployService = {
   ): Promise<{ success: boolean; deployment: DeploymentRecord }> {
     const res = await fetch(`${API_URL}/api/projects/${projectId}/deploy/${deployId}`, {
       credentials: "include",
+      headers: getAuthHeaders(),
     });
 
     const data = await res.json();
@@ -110,6 +112,7 @@ export const deployService = {
   }> {
     const res = await fetch(`${API_URL}/api/projects/${projectId}/deploy/${deployId}/logs`, {
       credentials: "include",
+      headers: getAuthHeaders(),
     });
 
     const data = await res.json();
@@ -129,6 +132,7 @@ export const deployService = {
     const res = await fetch(`${API_URL}/api/projects/${projectId}/deploy/${deployId}/redeploy`, {
       method: "POST",
       credentials: "include",
+      headers: getAuthHeaders(),
     });
 
     const data = await res.json();
@@ -148,6 +152,7 @@ export const deployService = {
     const res = await fetch(`${API_URL}/api/projects/${projectId}/deploy/${deployId}`, {
       method: "DELETE",
       credentials: "include",
+      headers: getAuthHeaders(),
     });
 
     const data = await res.json();

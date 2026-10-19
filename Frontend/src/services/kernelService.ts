@@ -1,4 +1,4 @@
-import API_URL from "../config/api";
+import API_URL, { getAuthHeaders } from "../config/api";
 import {
   type KernelType,
   type KernelStatus,
@@ -139,6 +139,7 @@ for mod in list(sys.modules.keys()):
         await fetch(`${API_URL}/api/projects/${this.projectId}/kernel/restart`, {
           method: "POST",
           credentials: "include",
+          headers: getAuthHeaders(),
         }).catch(() => {});
       }
 
@@ -462,7 +463,7 @@ for _name, _val in list(globals().items()):
 
     const res = await fetch(`${API_URL}/api/projects/${this.projectId}/kernel/execute`, {
       method: "POST",
-      headers: { "Content-Type": "application/json" },
+      headers: getAuthHeaders({ "Content-Type": "application/json" }),
       credentials: "include",
       body: JSON.stringify({ code }),
     });
