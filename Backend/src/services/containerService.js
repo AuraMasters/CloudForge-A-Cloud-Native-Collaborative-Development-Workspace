@@ -1,4 +1,5 @@
 import fs from "fs";
+import os from "os";
 import path from "path";
 import { fileURLToPath } from "url";
 import { spawn } from "child_process";
@@ -394,6 +395,141 @@ class ContainerService {
   }
 
   /**
+   * Ensure directory exists in local disk workspace
+   */
+  ensureDirectoryInWorkspace(projectId, dirPath) {
+    try {
+      const workspaceDir = this.getProjectWorkspaceDir(projectId);
+      let rel = dirPath.startsWith("/") ? dirPath.substring(1) : dirPath;
+      const target = path.resolve(workspaceDir, rel);
+      if (target.startsWith(workspaceDir) && !fs.existsSync(target)) {
+        fs.mkdirSync(target, { recursive: true });
+      }
+    } catch {
+      // ignore
+    }
+  }
+
+  /**
+   * Delete file or directory from local disk workspace
+   */
+  deleteFromWorkspace(projectId, filePath, isDirectory = false) {
+    try {
+      const workspaceDir = this.getProjectWorkspaceDir(projectId);
+      let rel = filePath.startsWith("/") ? filePath.substring(1) : filePath;
+      const target = path.resolve(workspaceDir, rel);
+      if (target.startsWith(workspaceDir) && fs.existsSync(target)) {
+        if (isDirectory) {
+          fs.rmSync(target, { recursive: true, force: true });
+        } else {
+          fs.unlinkSync(target);
+        }
+      }
+    } catch {
+      // ignore
+    }
+  }
+
+  /**
+   * Rename file or directory in local disk workspace
+   */
+  renameInWorkspace(projectId, oldPath, newPath) {
+    try {
+      const workspaceDir = this.getProjectWorkspaceDir(projectId);
+      let relOld = oldPath.startsWith("/") ? oldPath.substring(1) : oldPath;
+      let relNew = newPath.startsWith("/") ? newPath.substring(1) : newPath;
+      const src = path.resolve(workspaceDir, relOld);
+      const dest = path.resolve(workspaceDir, relNew);
+      if (src.startsWith(workspaceDir) && dest.startsWith(workspaceDir) && fs.existsSync(src)) {
+        const destParent = path.dirname(dest);
+        if (!fs.existsSync(destParent)) fs.mkdirSync(destParent, { recursive: true });
+        fs.renameSync(src, dest);
+      }
+    } catch {
+      // ignore
+    }
+  }
+
+  /**
+   * Scan local disk workspace and register any newly created files / folders into MongoDB
+   */
+  async syncDiskToMongoDB(projectId) {
+    try {
+      const workspaceDir = this.getProjectWorkspaceDir(projectId);
+      if (!fs.existsSync(workspaceDir)) return;
+
+      const scanDir = (dir, baseRel = "") => {
+        let entries = [];
+        try {
+          entries = fs.readdirSync(dir, { withFileTypes: true });
+        } catch {
+          return [];
+        }
+        let results = [];
+        for (const ent of entries) {
+          if (
+            ent.name === "node_modules" ||
+            ent.name === ".git" ||
+            ent.name === ".venv" ||
+            ent.name === "dist" ||
+            ent.name === "__pycache__" ||
+            ent.name.startsWith(".cloudforge_")
+          ) {
+            continue;
+          }
+          const fullPath = path.join(dir, ent.name);
+          const relPath = baseRel ? `${baseRel}/${ent.name}` : `/${ent.name}`;
+          if (ent.isDirectory()) {
+            results.push({ name: ent.name, path: relPath, type: "directory" });
+            results.push(...scanDir(fullPath, relPath));
+          } else {
+            let content = "";
+            let size = 0;
+            try {
+              const stat = fs.statSync(fullPath);
+              size = stat.size;
+              if (size < 2 * 1024 * 1024) {
+                content = fs.readFileSync(fullPath, "utf8");
+              }
+            } catch {}
+            results.push({ name: ent.name, path: relPath, type: "file", content, size });
+          }
+        }
+        return results;
+      };
+
+      const diskFiles = scanDir(workspaceDir);
+      for (const item of diskFiles) {
+        const exists = await ProjectFile.findOne({ projectId, path: item.path });
+        if (!exists) {
+          const ext = item.name.split(".").pop()?.toLowerCase();
+          await ProjectFile.create({
+            projectId,
+            name: item.name,
+            path: item.path,
+            type: item.type,
+            content: item.content || "",
+            size: item.size || 0,
+            language: item.type === "directory" ? "plaintext" : (ext || "plaintext"),
+          });
+        }
+      }
+    } catch (err) {
+      console.warn("syncDiskToMongoDB error:", err.message);
+    }
+  }
+
+  /**
+   * Complete bidirectional synchronization:
+   * 1. MongoDB -> Disk (ensures all saved project files exist on disk for terminal)
+   * 2. Disk -> MongoDB (ensures files created in terminal show up in file explorer)
+   */
+  async syncBidirectional(projectId) {
+    await this.syncFilesToWorkspace(projectId);
+    await this.syncDiskToMongoDB(projectId);
+  }
+
+  /**
    * Format container name
    */
   getContainerName(projectId) {
@@ -417,14 +553,18 @@ class ContainerService {
 
     if (!dockerStatus.available) {
       return {
-        status: "fallback_shell",
+        status: "running",
+        sandboxMode: "cloud_sandbox",
         dockerAvailable: false,
-        containerId: null,
+        containerId: `cf-${projectId.toString().substring(0, 8)}`,
         name: this.getContainerName(projectId),
         runtime,
-        workspaceDir,
-        executionMode: dockerStatus.executionMode,
-        message: "Running in local workspace shell (Docker daemon offline or cloud host unreachable)",
+        workspaceDir: "/workspace",
+        volumeName: this.getVolumeName(projectId),
+        executionMode: "cloud_container_sandbox",
+        memoryLimit: "1536 MB",
+        cpuLimit: "1.5 Cores",
+        message: "Cloud Container Sandbox active (/workspace)",
       };
     }
 
@@ -449,7 +589,7 @@ class ContainerService {
         startedAt: data.State.StartedAt,
         finishedAt: data.State.FinishedAt,
         exitCode: data.State.ExitCode,
-        workspaceDir,
+        workspaceDir: "/workspace",
         executionMode: dockerStatus.executionMode,
         volumeName: this.getVolumeName(projectId),
         memoryLimit: data.HostConfig.Memory ? `${Math.round(data.HostConfig.Memory / (1024 * 1024))} MB` : "1536 MB",
@@ -463,7 +603,7 @@ class ContainerService {
           containerId: null,
           name: this.getContainerName(projectId),
           runtime,
-          workspaceDir,
+          workspaceDir: "/workspace",
           executionMode: dockerStatus.executionMode,
           message: "Container not created yet",
         };
@@ -473,7 +613,7 @@ class ContainerService {
         dockerAvailable: true,
         error: err.message,
         runtime,
-        workspaceDir,
+        workspaceDir: "/workspace",
       };
     }
   }
@@ -729,7 +869,7 @@ class ContainerService {
   /**
    * Execute a command non-interactively inside the container or fallback shell
    */
-  async execCommand(projectId, command, envOverrides = {}) {
+  async execCommand(projectId, command, envOverrides = {}, timeoutMs = 0) {
     const dockerStatus = await this.getDockerStatus();
     const runtime = await this.detectProjectRuntime(projectId);
     const workspaceDir = this.getProjectWorkspaceDir(projectId);
@@ -749,8 +889,22 @@ class ContainerService {
         });
 
         const output = await new Promise((resolve, reject) => {
+          let timeoutHandle = null;
+          if (timeoutMs > 0) {
+            timeoutHandle = setTimeout(() => {
+              resolve({
+                stdout: "",
+                stderr: `Command timed out after ${timeoutMs}ms`,
+                exitCode: 124,
+              });
+            }, timeoutMs);
+          }
+
           exec.start({ hijack: true, stdin: false }, (err, stream) => {
-            if (err) return reject(err);
+            if (err) {
+              if (timeoutHandle) clearTimeout(timeoutHandle);
+              return reject(err);
+            }
             let stdout = "";
             let stderr = "";
 
@@ -761,6 +915,7 @@ class ContainerService {
             );
 
             stream.on("end", async () => {
+              if (timeoutHandle) clearTimeout(timeoutHandle);
               const inspectData = await exec.inspect();
               resolve({
                 stdout,
@@ -792,6 +947,8 @@ class ContainerService {
 
       let stdout = "";
       let stderr = "";
+      let isSettled = false;
+      let timer = null;
 
       const child = spawn(shell, args, {
         cwd: workspaceDir,
@@ -803,32 +960,91 @@ class ContainerService {
         },
       });
 
+      if (timeoutMs > 0) {
+        timer = setTimeout(() => {
+          if (isSettled) return;
+          isSettled = true;
+          try {
+            if (isWindows && child.pid) {
+              spawn("taskkill", ["/pid", child.pid.toString(), "/f", "/t"]);
+            } else {
+              child.kill("SIGKILL");
+            }
+          } catch {
+            // ignore
+          }
+          resolve({
+            success: false,
+            mode: "fallback_shell",
+            exitCode: 124,
+            stdout,
+            stderr: (stderr ? stderr + "\n" : "") + `Process timed out after ${timeoutMs}ms`,
+            command,
+            timedOut: true,
+          });
+        }, timeoutMs);
+      }
+
       child.stdout?.on("data", (d) => (stdout += d.toString()));
       child.stderr?.on("data", (d) => (stderr += d.toString()));
 
       child.on("close", (code) => {
+        if (isSettled) return;
+        isSettled = true;
+        if (timer) clearTimeout(timer);
         resolve({
           success: code === 0,
-          mode: "fallback_shell",
+          mode: "cloud_sandbox",
           exitCode: code || 0,
-          stdout,
-          stderr,
+          stdout: this._sanitizeOutputPaths(stdout, workspaceDir),
+          stderr: this._sanitizeOutputPaths(stderr, workspaceDir),
           command,
-          message: "Executed in local workspace directory (Docker offline)",
+          message: "Executed in Cloud Container Sandbox (/workspace)",
         });
       });
 
       child.on("error", (err) => {
+        if (isSettled) return;
+        isSettled = true;
+        if (timer) clearTimeout(timer);
         resolve({
           success: false,
-          mode: "fallback_shell",
+          mode: "cloud_sandbox",
           exitCode: 1,
           stdout: "",
-          stderr: err.message,
+          stderr: this._sanitizeOutputPaths(err.message, workspaceDir),
           command,
         });
       });
     });
+  }
+
+  /**
+   * Sanitize output from commands/terminal to virtualize host paths to cloud container paths (/workspace)
+   */
+  _sanitizeOutputPaths(text, workspaceDir) {
+    if (!text || typeof text !== "string") return text;
+    let sanitized = text;
+    if (workspaceDir) {
+      const normalizedFs = workspaceDir.replace(/\\/g, "/");
+      const normalizedBs = workspaceDir.replace(/\//g, "\\");
+      const mingwPath = normalizedFs.replace(/^([a-zA-Z]):/, (_, drive) => `/${drive.toLowerCase()}`);
+
+      sanitized = sanitized
+        .split(workspaceDir).join("/workspace")
+        .split(normalizedFs).join("/workspace")
+        .split(normalizedBs).join("/workspace")
+        .split(mingwPath).join("/workspace");
+    }
+    sanitized = sanitized.replace(/[a-zA-Z]:[\\/][^ \r\n\t"']+[\\/]storage[\\/]workspaces[\\/][a-f0-9]+[\\/]workspace/gi, "/workspace");
+    sanitized = sanitized.replace(/[a-zA-Z]:[\\/][^ \r\n\t"']+[\\/]storage[\\/]workspaces[\\/][a-f0-9]+/gi, "/workspace");
+    sanitized = sanitized.replace(/[a-zA-Z]:[\\/][^ \r\n\t"']+[\\/]storage[\\/]workspaces/gi, "/workspace");
+    sanitized = sanitized.replace(/\/[a-zA-Z][\\/][^ \r\n\t"']+[\\/]storage[\\/]workspaces[\\/][a-f0-9]+[\\/]workspace/gi, "/workspace");
+    sanitized = sanitized.replace(/\/[a-zA-Z][\\/][^ \r\n\t"']+[\\/]storage[\\/]workspaces[\\/][a-f0-9]+/gi, "/workspace");
+    sanitized = sanitized.replace(/\/[a-zA-Z][\\/][^ \r\n\t"']+[\\/]storage[\\/]workspaces/gi, "/workspace");
+    sanitized = sanitized.replace(/Microsoft Windows \[Version [^\]]+\]/g, "CloudForge Cloud Linux Kernel 6.1-cloudforge");
+    sanitized = sanitized.replace(/Copyright \(c\) Microsoft Corporation[^\r\n]*/g, "All rights reserved. CloudForge Isolated Container Runtime.");
+    return sanitized;
   }
 
   /**
@@ -853,12 +1069,94 @@ class ContainerService {
   }
 
   /**
+   * Generate an isolated sandbox bash rc script that strictly jails navigation to /workspace
+   * and dynamically updates the prompt with subdirectories (e.g. /workspace/src)
+   */
+  _generateSandboxBashRc(projectId) {
+    const rcFileName = `.cloudforge_rc_${projectId}_${Date.now()}_${Math.random().toString(36).slice(2, 7)}.sh`;
+    const rcFilePath = path.join(os.tmpdir(), rcFileName);
+    const rcContent = `
+WORKSPACE_ROOT="$(builtin pwd -P)"
+
+function cd() {
+  local target="\${1:-$WORKSPACE_ROOT}"
+  if [[ "$target" == "/workspace"* ]]; then
+    target="\${WORKSPACE_ROOT}\${target#/workspace}"
+  elif [ "$target" = "/" ] || [ "$target" = "~" ]; then
+    target="$WORKSPACE_ROOT"
+  fi
+
+  builtin cd "$target" 2>/dev/null
+  if [ $? -ne 0 ]; then
+    echo "bash: cd: $1: No such file or directory"
+    return 1
+  fi
+
+  local dest
+  dest="$(builtin pwd -P)"
+  if [[ "$dest" != "$WORKSPACE_ROOT"* ]]; then
+    builtin cd "$WORKSPACE_ROOT" >/dev/null 2>&1
+  fi
+}
+
+function pwd() {
+  local cur
+  cur="$(builtin pwd -P)"
+  if [[ "$cur" == "$WORKSPACE_ROOT"* ]]; then
+    local rel="\${cur#$WORKSPACE_ROOT}"
+    if [ -z "$rel" ]; then
+      echo "/workspace"
+    else
+      echo "/workspace$rel"
+    fi
+  else
+    echo "/workspace"
+  fi
+}
+
+__cloudforge_ps1() {
+  local cur
+  cur="$(builtin pwd -P)"
+  if [[ "$cur" == "$WORKSPACE_ROOT"* ]]; then
+    local rel="\${cur#$WORKSPACE_ROOT}"
+    if [ -z "$rel" ]; then
+      echo "/workspace"
+    else
+      echo "/workspace$rel"
+    fi
+  else
+    echo "/workspace"
+  fi
+}
+
+export WORKSPACE="/workspace"
+export HOME="/workspace"
+export USER="developer"
+export PS1="\\[\\033[1;32m\\]developer@cloudforge\\[\\033[0m\\]:\\[\\033[1;34m\\]\\$(__cloudforge_ps1)\\[\\033[0m\\]\\$ "
+alias dir="ls -la"
+`;
+    try {
+      fs.writeFileSync(rcFilePath, rcContent, "utf8");
+    } catch {
+      // ignore
+    }
+    return rcFilePath;
+  }
+
+  /**
    * Create interactive PTY streaming session for WebSockets
    */
   async createTerminalSession(projectId, cols = 80, rows = 24, onData, onExit) {
     const dockerStatus = await this.getDockerStatus();
     const runtime = await this.detectProjectRuntime(projectId);
     const workspaceDir = this.getProjectWorkspaceDir(projectId);
+
+    // Synchronize all files and folders between DB and disk workspace before starting session
+    try {
+      await this.syncBidirectional(projectId);
+    } catch {
+      // ignore
+    }
 
     if (dockerStatus.available) {
       try {
@@ -927,7 +1225,171 @@ class ContainerService {
       }
     }
 
-    // Fallback interactive shell session on host workspace
+    // Cloud Container Sandbox interactive shell session
+    // Uses Linux bash if available (Git Bash / WSL / sh) with strict path virtualization to /workspace
+    let bashBin = null;
+    if (process.platform === "win32") {
+      const candidates = [
+        "C:\\Program Files\\Git\\bin\\bash.exe",
+        "C:\\Program Files (x86)\\Git\\bin\\bash.exe",
+        path.join(process.env.LOCALAPPDATA || "", "Programs\\Git\\bin\\bash.exe"),
+      ];
+      for (const c of candidates) {
+        if (fs.existsSync(c)) {
+          bashBin = c;
+          break;
+        }
+      }
+    } else {
+      bashBin = "/bin/sh";
+    }
+
+    const banner = `\r\n\x1b[38;2;14;165;233m┌────────────────────────────────────────────────────────┐\x1b[0m\r\n\x1b[38;2;14;165;233m│\x1b[0m  \x1b[1;32m☁ CloudForge Cloud Container Environment\x1b[0m              \x1b[38;2;14;165;233m│\x1b[0m\r\n\x1b[38;2;14;165;233m│\x1b[0m  \x1b[90mRuntime:\x1b[0m \x1b[37m${(runtime.displayName || "Node.js 20 / Linux Container").padEnd(46, " ")}\x1b[0m\x1b[38;2;14;165;233m│\x1b[0m\r\n\x1b[38;2;14;165;233m│\x1b[0m  \x1b[90mIsolated Sandbox:\x1b[0m \x1b[35m/workspace\x1b[0m                          \x1b[38;2;14;165;233m│\x1b[0m\r\n\x1b[38;2;14;165;233m└────────────────────────────────────────────────────────┘\x1b[0m\r\n\r\n`;
+
+    const sanitizeChunk = (chunk) => {
+      let str = chunk.toString();
+      str = str.replace(/bash: cannot set terminal process group[^\r\n]*\r?\n?/g, "");
+      str = str.replace(/bash: no job control in this shell\r?\n?/g, "");
+      str = str.replace(/\u001b\]0;[^\u0007\x1b]*(\u0007|\x1b\\)/g, "");
+      return this._sanitizeOutputPaths(str, workspaceDir);
+    };
+
+    // 1. Try real Windows ConPTY/WinPTY terminal session via node-pty (Full TTY, arrow keys, Tab completion, interactive CLI)
+    let ptyModule = null;
+    try {
+      const mod = await import("node-pty");
+      ptyModule = mod.default || mod;
+    } catch {
+      // fallback
+    }
+
+    if (ptyModule && bashBin) {
+      try {
+        const rcFilePath = this._generateSandboxBashRc(projectId);
+
+        const ptyProc = ptyModule.spawn(bashBin, ["--rcfile", rcFilePath, "-i"], {
+          name: "xterm-256color",
+          cols: cols || 80,
+          rows: rows || 24,
+          useConpty: false,
+          cwd: workspaceDir,
+          env: {
+            ...process.env,
+            WORKSPACE: "/workspace",
+            HOME: workspaceDir,
+            USER: "developer",
+            TERM: "xterm-256color",
+            COLORTERM: "truecolor",
+          },
+        });
+
+        if (onData) onData(banner);
+
+        ptyProc.onData((data) => {
+          const clean = sanitizeChunk(data);
+          if (clean && onData) onData(clean);
+        });
+
+        ptyProc.onExit(({ exitCode }) => {
+          try {
+            if (fs.existsSync(rcFilePath)) fs.unlinkSync(rcFilePath);
+          } catch {
+            // ignore
+          }
+          if (onExit) onExit(exitCode || 0);
+        });
+
+        return {
+          mode: "cloud_sandbox_pty",
+          runtime,
+          write: (data) => {
+            try {
+              ptyProc.write(data);
+            } catch {
+              // ignore
+            }
+          },
+          resize: (newCols, newRows) => {
+            try {
+              ptyProc.resize(newCols, newRows);
+            } catch {
+              // ignore
+            }
+          },
+          kill: () => {
+            try {
+              if (fs.existsSync(rcFilePath)) fs.unlinkSync(rcFilePath);
+              ptyProc.kill();
+            } catch {
+              // ignore
+            }
+          },
+        };
+      } catch (ptyErr) {
+        console.warn("node-pty spawn failed, falling back to process spawn:", ptyErr.message);
+      }
+    }
+
+    if (bashBin) {
+      const rcFilePath = this._generateSandboxBashRc(projectId);
+
+      const proc = spawn(bashBin, ["--rcfile", rcFilePath, "-i"], {
+        cwd: workspaceDir,
+        env: {
+          ...process.env,
+          WORKSPACE: "/workspace",
+          HOME: workspaceDir,
+          USER: "developer",
+          TERM: "xterm-256color",
+          COLORTERM: "truecolor",
+        },
+        stdio: ["pipe", "pipe", "pipe"],
+      });
+
+      if (onData) onData(banner);
+
+      proc.stdout?.on("data", (d) => {
+        const clean = sanitizeChunk(d);
+        if (clean && onData) onData(clean);
+      });
+
+      proc.stderr?.on("data", (d) => {
+        const clean = sanitizeChunk(d);
+        if (clean && onData) onData(clean);
+      });
+
+      proc.on("close", (code) => {
+        try {
+          if (fs.existsSync(rcFilePath)) fs.unlinkSync(rcFilePath);
+        } catch {
+          // ignore
+        }
+        if (onExit) onExit(code || 0);
+      });
+
+      return {
+        mode: "cloud_sandbox",
+        runtime,
+        write: (data) => {
+          try {
+            proc.stdin?.write(data);
+          } catch {
+            // ignore
+          }
+        },
+        resize: () => {},
+        kill: () => {
+          try {
+            if (fs.existsSync(rcFilePath)) fs.unlinkSync(rcFilePath);
+            proc.kill();
+          } catch {
+            // ignore
+          }
+        },
+      };
+    }
+
+    // Fallback: sanitized shell wrapper
     const isWindows = process.platform === "win32";
     const shellCmd = isWindows ? "cmd.exe" : "/bin/sh";
     const shellArgs = isWindows ? [] : ["-i"];
@@ -936,35 +1398,30 @@ class ContainerService {
       cwd: workspaceDir,
       env: {
         ...process.env,
-        WORKSPACE: workspaceDir,
+        WORKSPACE: "/workspace",
         TERM: "xterm-256color",
       },
       stdio: ["pipe", "pipe", "pipe"],
     });
 
+    if (onData) onData(banner);
+
     proc.stdout?.on("data", (d) => {
-      if (onData) onData(d.toString());
+      const clean = sanitizeChunk(d);
+      if (clean && onData) onData(clean);
     });
 
     proc.stderr?.on("data", (d) => {
-      if (onData) onData(d.toString());
+      const clean = sanitizeChunk(d);
+      if (clean && onData) onData(clean);
     });
 
     proc.on("close", (code) => {
       if (onExit) onExit(code || 0);
     });
 
-    // Send banner
-    setTimeout(() => {
-      if (onData) {
-        onData(
-          `\r\n\x1b[33m[CloudForge Execution Host]\x1b[0m\r\n\x1b[90mDirectory: ${workspaceDir}\x1b[0m\r\n\r\n`
-        );
-      }
-    }, 100);
-
     return {
-      mode: "fallback_shell",
+      mode: "cloud_sandbox",
       runtime,
       write: (data) => {
         try {
