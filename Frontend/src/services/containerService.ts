@@ -15,9 +15,11 @@ class ContainerService {
     if (!host) {
       host = window.location.host;
     }
+    const token = typeof window !== "undefined" ? localStorage.getItem("cf_auth_token") : "";
+    const tokenParam = token ? `&token=${encodeURIComponent(token)}` : "";
     return `${wsProtocol}//${host}/ws/terminal?projectId=${encodeURIComponent(projectId)}&tabId=${encodeURIComponent(
       tabId
-    )}&cols=${cols}&rows=${rows}`;
+    )}&cols=${cols}&rows=${rows}${tokenParam}`;
   }
 
   /**
