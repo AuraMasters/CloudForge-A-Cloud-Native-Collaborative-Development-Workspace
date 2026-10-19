@@ -1449,12 +1449,25 @@ class ContainerService {
         .split(normalizedBs).join("/workspace")
         .split(mingwPath).join("/workspace");
     }
+
+    // Windows storage workspace paths
     sanitized = sanitized.replace(/[a-zA-Z]:[\\/][^ \r\n\t"']+[\\/]storage[\\/]workspaces[\\/][a-f0-9]+[\\/]workspace/gi, "/workspace");
     sanitized = sanitized.replace(/[a-zA-Z]:[\\/][^ \r\n\t"']+[\\/]storage[\\/]workspaces[\\/][a-f0-9]+/gi, "/workspace");
     sanitized = sanitized.replace(/[a-zA-Z]:[\\/][^ \r\n\t"']+[\\/]storage[\\/]workspaces/gi, "/workspace");
-    sanitized = sanitized.replace(/\/[a-zA-Z][\\/][^ \r\n\t"']+[\\/]storage[\\/]workspaces[\\/][a-f0-9]+[\\/]workspace/gi, "/workspace");
-    sanitized = sanitized.replace(/\/[a-zA-Z][\\/][^ \r\n\t"']+[\\/]storage[\\/]workspaces[\\/][a-f0-9]+/gi, "/workspace");
-    sanitized = sanitized.replace(/\/[a-zA-Z][\\/][^ \r\n\t"']+[\\/]storage[\\/]workspaces/gi, "/workspace");
+
+    // Linux & Unix storage workspace paths (Render, Linux hosts, containers)
+    sanitized = sanitized.replace(/\/[^ \r\n\t"']+\/storage\/workspaces\/[a-f0-9]+\/workspace/g, "/workspace");
+    sanitized = sanitized.replace(/\/[^ \r\n\t"']+\/storage\/workspaces\/[a-f0-9]+/g, "/workspace");
+    sanitized = sanitized.replace(/\/[^ \r\n\t"']+\/storage\/workspaces/g, "/workspace");
+    sanitized = sanitized.replace(/\/opt\/render\/project\/src\/Backend\/storage[^\s"'`\(\)]*/g, "/workspace");
+    sanitized = sanitized.replace(/\/opt\/render\/project\/[^\s"'`\(\)]*/g, "/workspace");
+    sanitized = sanitized.replace(/\/home\/render[^\s"'`\(\)]*/g, "/workspace");
+
+    // Host user prompts (e.g. render@srv-...:~$)
+    sanitized = sanitized.replace(/render@srv-[a-zA-Z0-9_-]+:[^$#\r\n]*([$#])/g, "developer@cloudforge:/workspace$1");
+    sanitized = sanitized.replace(/render@srv-[a-zA-Z0-9_-]+/g, "developer@cloudforge");
+
+    // Windows banner cleanup
     sanitized = sanitized.replace(/Microsoft Windows \[Version [^\]]+\]/g, "CloudForge Cloud Linux Kernel 6.1-cloudforge");
     sanitized = sanitized.replace(/Copyright \(c\) Microsoft Corporation[^\r\n]*/g, "All rights reserved. CloudForge Isolated Container Runtime.");
     return sanitized;
@@ -1485,48 +1498,129 @@ class ContainerService {
    * Generate an isolated sandbox bash rc script that strictly jails navigation to /workspace
    * and dynamically updates the prompt with subdirectories (e.g. /workspace/src)
    */
-  _generateSandboxBashRc(projectId) {
+  _generateSandboxBashRc(projectId, workspaceDir) {
     const rcFileName = `.cloudforge_rc_${projectId}_${Date.now()}_${Math.random().toString(36).slice(2, 7)}.sh`;
     const rcFilePath = path.join(os.tmpdir(), rcFileName);
-    const rcContent = `
-WORKSPACE_ROOT="$(pwd -P 2>/dev/null || pwd)"
+    const normalizedWs = (workspaceDir || "").replace(/\\/g, "/");
 
+    const rcContent = `
+# CloudForge Isolated Sandbox Environment
+export WORKSPACE="/workspace"
+export USER="developer"
+export LOGNAME="developer"
+export USERNAME="developer"
+export CI="true"
+export TERM="xterm-256color"
+export COLORTERM="truecolor"
+export PAGER="cat"
+
+# High-speed npm defaults
+export npm_config_progress=false
+export npm_config_audit=false
+export npm_config_fund=false
+export npm_config_update_notifier=false
+export npm_config_prefer_offline=true
+
+# Canonical Workspace Directory
+WORKSPACE_ROOT="${normalizedWs}"
+if [ -d "$WORKSPACE_ROOT" ]; then
+  WORKSPACE_ROOT="$(cd "$WORKSPACE_ROOT" 2>/dev/null && pwd -P 2>/dev/null || echo "$WORKSPACE_ROOT")"
+else
+  WORKSPACE_ROOT="$(pwd -P 2>/dev/null || pwd)"
+fi
+export WORKSPACE_ROOT
+export HOME="$WORKSPACE_ROOT"
+
+# Ensure starting inside WORKSPACE_ROOT
+command cd "$WORKSPACE_ROOT" >/dev/null 2>&1
+
+# Strict Sandbox cd Jail
 cd() {
-  target="\${1:-$WORKSPACE_ROOT}"
-  case "$target" in
-    /workspace*)
-      target="\${WORKSPACE_ROOT}\${target#/workspace}"
+  _t="\${1:-$WORKSPACE_ROOT}"
+
+  # Virtual /workspace paths
+  case "$_t" in
+    /workspace)
+      command cd "$WORKSPACE_ROOT" >/dev/null 2>&1
+      return 0
       ;;
-    /|~)
-      target="$WORKSPACE_ROOT"
+    /workspace/*)
+      _t="${normalizedWs}\${_t#/workspace}"
+      ;;
+    /|~|~/*)
+      command cd "$WORKSPACE_ROOT" >/dev/null 2>&1
+      return 0
+      ;;
+    /*)
+      echo "bash: cd: \$1: Permission denied (restricted to /workspace sandbox)"
+      return 1
       ;;
   esac
 
-  command cd "$target" 2>/dev/null
-  if [ $? -ne 0 ]; then
-    echo "cd: $1: No such file or directory"
+  # If currently at WORKSPACE_ROOT and trying to go up (..), forbid
+  _cur="$(pwd -P 2>/dev/null || pwd)"
+  if [ "$_cur" = "$WORKSPACE_ROOT" ]; then
+    case "$_t" in
+      ..|../*|*/..|*/../*)
+        echo "bash: cd: restricted: cannot navigate outside of project workspace (/workspace)"
+        return 1
+        ;;
+    esac
+  fi
+
+  # Attempt cd
+  command cd "$_t" 2>/dev/null
+  _status=$?
+  if [ $_status -ne 0 ]; then
+    echo "bash: cd: \$1: No such file or directory"
     return 1
   fi
 
-  dest="$(pwd -P 2>/dev/null || pwd)"
-  case "$dest" in
-    "$WORKSPACE_ROOT"*)
+  # Verify destination is inside WORKSPACE_ROOT
+  _dest="$(pwd -P 2>/dev/null || pwd)"
+  case "$_dest" in
+    "$WORKSPACE_ROOT"|"$WORKSPACE_ROOT"/*)
+      return 0
       ;;
     *)
+      # Jail violation! Revert immediately back to WORKSPACE_ROOT
       command cd "$WORKSPACE_ROOT" >/dev/null 2>&1
+      echo "bash: cd: restricted: cannot navigate outside of project workspace (/workspace)"
+      return 1
       ;;
   esac
 }
 
+pushd() {
+  cd "$@"
+}
+
+popd() {
+  command popd "$@" 2>/dev/null
+  _cur="$(pwd -P 2>/dev/null || pwd)"
+  case "$_cur" in
+    "$WORKSPACE_ROOT"|"$WORKSPACE_ROOT"/*)
+      ;;
+    *)
+      command cd "$WORKSPACE_ROOT" >/dev/null 2>&1
+      echo "popd: restricted: reset to /workspace"
+      ;;
+  esac
+}
+
+chdir() {
+  cd "$@"
+}
+
 pwd() {
-  cur="$(pwd -P 2>/dev/null || pwd)"
-  case "$cur" in
+  _cur="$(pwd -P 2>/dev/null || pwd)"
+  case "$_cur" in
     "$WORKSPACE_ROOT"*)
-      rel="\${cur#$WORKSPACE_ROOT}"
-      if [ -z "$rel" ]; then
+      _rel="\${_cur#$WORKSPACE_ROOT}"
+      if [ -z "$_rel" ]; then
         echo "/workspace"
       else
-        echo "/workspace$rel"
+        echo "/workspace\$_rel"
       fi
       ;;
     *)
@@ -1535,18 +1629,42 @@ pwd() {
   esac
 }
 
-export WORKSPACE="/workspace"
-export HOME="$WORKSPACE_ROOT"
-export USER="developer"
-export PS1="developer@cloudforge:/workspace$ "
-export npm_config_progress=false
-export npm_config_audit=false
-export npm_config_fund=false
-export npm_config_update_notifier=false
-export npm_config_prefer_offline=true
-export CI=true
+__cf_set_prompt() {
+  _code=$?
+  _cur="$(pwd -P 2>/dev/null || pwd)"
+  case "$_cur" in
+    "$WORKSPACE_ROOT"*)
+      _sub="\${_cur#$WORKSPACE_ROOT}"
+      if [ -z "$_sub" ]; then
+        _vpath="/workspace"
+      else
+        _vpath="/workspace\$_sub"
+      fi
+      ;;
+    *)
+      command cd "$WORKSPACE_ROOT" >/dev/null 2>&1
+      _vpath="/workspace"
+      ;;
+  esac
+
+  PS1="\\[\\e[1;32m\\]developer@cloudforge\\[\\e[0m\\]:\\[\\e[1;34m\\]\${_vpath}\\[\\e[0m\\]\\$ "
+  return $_code
+}
+
+PROMPT_COMMAND="__cf_set_prompt"
+export PS1="\[\e[1;32m\]developer@cloudforge\[\e[0m\]:\[\e[1;34m\]/workspace\[\e[0m\]\$ "
+
+# Lock sandbox functions and critical vars so user scripts cannot overwrite or unset them
+readonly -f cd 2>/dev/null || true
+readonly -f pushd 2>/dev/null || true
+readonly -f chdir 2>/dev/null || true
+readonly -f pwd 2>/dev/null || true
+readonly -f __cf_set_prompt 2>/dev/null || true
+readonly PROMPT_COMMAND 2>/dev/null || true
+readonly WORKSPACE_ROOT 2>/dev/null || true
 
 alias dir="ls -la" 2>/dev/null || true
+alias ll="ls -la" 2>/dev/null || true
 alias npm="npm --no-audit --no-fund --no-progress" 2>/dev/null || true
 alias npx="npx --no-audit --no-fund" 2>/dev/null || true
 `;
@@ -1677,8 +1795,17 @@ alias npx="npx --no-audit --no-fund" 2>/dev/null || true
       }
     }
 
-    const rcFilePath = this._generateSandboxBashRc(projectId);
-    const shellArgs = ["-i"];
+    const rcFilePath = this._generateSandboxBashRc(projectId, workspaceDir);
+    const normalizedRcPath = rcFilePath.replace(/\\/g, "/");
+
+    let shellArgs;
+    if (isBash) {
+      shellArgs = ["--noprofile", "--rcfile", normalizedRcPath, "-i"];
+    } else if (bashBin && bashBin.includes("powershell")) {
+      shellArgs = ["-NoLogo", "-NoExit"];
+    } else {
+      shellArgs = ["-i"];
+    }
 
     const banner = `\r\n\x1b[38;2;14;165;233m┌────────────────────────────────────────────────────────┐\x1b[0m\r\n\x1b[38;2;14;165;233m│\x1b[0m  \x1b[1;32m☁ CloudForge Cloud Container Environment\x1b[0m              \x1b[38;2;14;165;233m│\x1b[0m\r\n\x1b[38;2;14;165;233m│\x1b[0m  \x1b[90mRuntime:\x1b[0m \x1b[37m${(runtime.displayName || "CloudForge Linux Container").padEnd(46, " ")}\x1b[0m\x1b[38;2;14;165;233m│\x1b[0m\r\n\x1b[38;2;14;165;233m│\x1b[0m  \x1b[90mIsolated Sandbox:\x1b[0m \x1b[35m/workspace\x1b[0m                          \x1b[38;2;14;165;233m│\x1b[0m\r\n\x1b[38;2;14;165;233m└────────────────────────────────────────────────────────┘\x1b[0m\r\n\r\n`;
 
@@ -1706,7 +1833,10 @@ alias npx="npx --no-audit --no-fund" 2>/dev/null || true
       WORKSPACE: "/workspace",
       HOME: workspaceDir,
       USER: "developer",
+      LOGNAME: "developer",
+      USERNAME: "developer",
       ENV: rcFilePath,
+      BASH_ENV: rcFilePath,
       TERM: "xterm-256color",
       COLORTERM: "truecolor",
       npm_config_cache: sharedNpmCache,
