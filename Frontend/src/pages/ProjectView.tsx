@@ -1042,6 +1042,28 @@ export default function ProjectView() {
     []
   );
 
+  // Live real-time sync when terminal commands (e.g. vite, next, touch, mkdir) modify disk workspace
+  const handleRemoteWorkspaceUpdated = useCallback((newFiles: WorkspaceFile[]) => {
+    setFiles(newFiles);
+    // Automatically sync open editor tabs if files changed on disk and are not dirty
+    setTabs((prevTabs) =>
+      prevTabs.map((tab) => {
+        if (tab.isDirty) return tab;
+        const matching = newFiles.find(
+          (f) => f._id === tab.fileId || (f.path || f.name) === (tab.path || tab.name)
+        );
+        if (matching && matching.content !== undefined && matching.content !== tab.content) {
+          return {
+            ...tab,
+            content: matching.content,
+            initialContent: matching.content,
+          };
+        }
+        return tab;
+      })
+    );
+  }, []);
+
   const isAnyTabDirty = tabs.some((t) => t.isDirty);
   const activeTab = tabs.find((t) => t.fileId === activeTabId);
 
@@ -1065,6 +1087,7 @@ export default function ProjectView() {
       onRemoteFileDeleted={handleRemoteFileDeleted}
       onRemoteCommitCreated={handleRemoteCommitCreated}
       onRemoteBranchChanged={handleRemoteBranchChanged}
+      onRemoteWorkspaceUpdated={handleRemoteWorkspaceUpdated}
     >
       <div className={`h-screen w-screen flex flex-col overflow-hidden font-sans select-none relative transition-colors duration-150 ${
         isDark ? "bg-black text-white" : "bg-white text-black"

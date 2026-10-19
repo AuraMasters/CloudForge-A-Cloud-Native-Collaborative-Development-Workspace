@@ -68,6 +68,7 @@ export interface CollabMessage {
   stateVector?: string; // base64
   serverStateVector?: string; // base64
   file?: any;
+  files?: any[];
   commit?: any;
   branch?: string;
   currentBranch?: string;

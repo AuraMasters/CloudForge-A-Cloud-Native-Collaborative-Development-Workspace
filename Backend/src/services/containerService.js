@@ -22,6 +22,17 @@ class ContainerService {
     this.docker = this._initDockerClient();
     this.activeFallbackSessions = new Map();
     this.activeExecStreams = new Map();
+    this.workspaceWatchers = new Map();
+    this.syncTimers = new Map();
+  }
+
+  async _getCollaborationGateway() {
+    try {
+      const mod = await import("./collaborationGateway.js");
+      return mod.default || mod;
+    } catch {
+      return null;
+    }
   }
 
   /**
@@ -424,6 +435,317 @@ class ContainerService {
       syncedCount: files.length,
       workspaceDir,
     };
+  }
+
+  /**
+   * Scan disk workspace for files and folders created or modified (e.g. via terminal commands
+   * such as `mkdir`, `touch`, `npm create vite`, `git checkout`), sync them to MongoDB,
+   * and broadcast real-time updates to all connected workspace clients without page reload.
+   */
+  async syncDiskToDatabase(projectId) {
+    const workspaceDir = this.getProjectWorkspaceDir(projectId);
+    if (!fs.existsSync(workspaceDir)) return [];
+
+    const IGNORED_NAMES = new Set([
+      "node_modules",
+      ".git",
+      ".npm",
+      ".cache",
+      "dist",
+      ".next",
+      "__pycache__",
+      ".venv",
+      ".turbo",
+      ".DS_Store",
+      "Thumbs.db",
+    ]);
+
+    const diskFiles = [];
+
+    const walk = (currentDir, relativePrefix = "") => {
+      let entries = [];
+      try {
+        entries = fs.readdirSync(currentDir, { withFileTypes: true });
+      } catch {
+        return;
+      }
+
+      for (const entry of entries) {
+        const name = entry.name;
+        if (IGNORED_NAMES.has(name) || name.startsWith(".cloudforge_rc")) continue;
+
+        const fullPath = path.join(currentDir, name);
+        const relPath = relativePrefix ? `${relativePrefix}/${name}` : name;
+        const normalizedPath = `/${relPath}`;
+
+        if (entry.isDirectory()) {
+          diskFiles.push({
+            name,
+            path: normalizedPath,
+            type: "directory",
+            content: "",
+            size: 0,
+            language: "directory",
+            mimeType: "inode/directory",
+          });
+          walk(fullPath, relPath);
+        } else if (entry.isFile()) {
+          let content = "";
+          let size = 0;
+          try {
+            const stat = fs.statSync(fullPath);
+            size = stat.size;
+            // Read content for text/code files up to 3MB
+            if (size <= 3 * 1024 * 1024) {
+              content = fs.readFileSync(fullPath, "utf8");
+            }
+          } catch {
+            // Ignore unreadable or locked files
+          }
+
+          diskFiles.push({
+            name,
+            path: normalizedPath,
+            type: "file",
+            content,
+            size,
+            language: this._detectFileLanguage(name),
+            mimeType: this._detectFileMimeType(name),
+          });
+        }
+      }
+    };
+
+    walk(workspaceDir);
+
+    const dbFiles = await ProjectFile.find({ projectId });
+    const dbPathMap = new Map();
+    for (const f of dbFiles) {
+      const p = f.path || `/${f.name}`;
+      dbPathMap.set(p, f);
+    }
+
+    const diskPathSet = new Set();
+    let hasChanges = false;
+
+    // 1. Insert newly created files or update modified files from disk
+    for (const item of diskFiles) {
+      diskPathSet.add(item.path);
+      const existing = dbPathMap.get(item.path);
+
+      if (!existing) {
+        await ProjectFile.create({
+          projectId,
+          name: item.name,
+          path: item.path,
+          type: item.type,
+          language: item.language,
+          mimeType: item.mimeType,
+          content: item.content,
+          size: item.size,
+        });
+        hasChanges = true;
+      } else if (item.type === "file" && existing.content !== item.content) {
+        existing.content = item.content;
+        existing.size = item.size;
+        existing.updatedAt = new Date();
+        await existing.save();
+        hasChanges = true;
+      }
+    }
+
+    // 2. Remove files deleted from disk (except ignored paths)
+    for (const [p, dbFile] of dbPathMap.entries()) {
+      if (IGNORED_NAMES.has(dbFile.name) || p.includes("/node_modules/")) continue;
+      if (!diskPathSet.has(p)) {
+        await ProjectFile.findByIdAndDelete(dbFile._id);
+        hasChanges = true;
+      }
+    }
+
+    // 3. Return all updated files and broadcast real-time event to project room
+    const allUpdatedFiles = await ProjectFile.find({ projectId }).sort({ type: -1, name: 1 });
+    if (hasChanges) {
+      const gateway = await this._getCollaborationGateway();
+      if (gateway && gateway.broadcastToRoom) {
+        gateway.broadcastToRoom(projectId, {
+          type: "workspace_updated",
+          files: allUpdatedFiles,
+        });
+      }
+    }
+
+    return allUpdatedFiles;
+  }
+
+  /**
+   * Bidirectional sync: sync DB files to disk, then sync disk back to DB
+   */
+  async syncBidirectional(projectId) {
+    await this.syncFilesToWorkspace(projectId);
+    const updatedFiles = await this.syncDiskToDatabase(projectId);
+    return {
+      syncedCount: updatedFiles.length,
+      files: updatedFiles,
+    };
+  }
+
+  /**
+   * Schedule debounced disk-to-DB sync
+   */
+  scheduleDiskSync(projectId, delayMs = 600) {
+    if (!this.syncTimers) this.syncTimers = new Map();
+    if (this.syncTimers.has(projectId)) {
+      clearTimeout(this.syncTimers.get(projectId));
+    }
+    const timer = setTimeout(async () => {
+      this.syncTimers.delete(projectId);
+      try {
+        await this.syncDiskToDatabase(projectId);
+      } catch (err) {
+        console.error(`Error syncing disk to DB for project ${projectId}:`, err.message);
+      }
+    }, delayMs);
+    this.syncTimers.set(projectId, timer);
+  }
+
+  /**
+   * Watch disk workspace directory for file additions, modifications, or deletions
+   */
+  startWorkspaceWatcher(projectId) {
+    if (!this.workspaceWatchers) this.workspaceWatchers = new Map();
+    if (this.workspaceWatchers.has(projectId)) return;
+
+    const workspaceDir = this.getProjectWorkspaceDir(projectId);
+    if (!fs.existsSync(workspaceDir)) {
+      try {
+        fs.mkdirSync(workspaceDir, { recursive: true });
+      } catch {
+        return;
+      }
+    }
+
+    try {
+      const watcher = fs.watch(workspaceDir, { recursive: true }, (eventType, filename) => {
+        if (!filename) return;
+        const norm = filename.replace(/\\/g, "/");
+        if (
+          norm.includes("node_modules") ||
+          norm.includes(".git") ||
+          norm.includes(".npm") ||
+          norm.includes(".cache") ||
+          norm.includes(".cloudforge_rc")
+        ) {
+          return;
+        }
+        this.scheduleDiskSync(projectId, 500);
+      });
+
+      this.workspaceWatchers.set(projectId, watcher);
+    } catch (err) {
+      console.warn(`fs.watch not supported or failed for project ${projectId}:`, err.message);
+    }
+  }
+
+  _detectFileLanguage(filename) {
+    const ext = filename?.split(".").pop()?.toLowerCase();
+    switch (ext) {
+      case "js":
+      case "jsx":
+      case "mjs":
+      case "cjs":
+        return "javascript";
+      case "ts":
+      case "tsx":
+        return "typescript";
+      case "py":
+        return "python";
+      case "html":
+      case "htm":
+        return "html";
+      case "css":
+      case "scss":
+      case "less":
+        return "css";
+      case "json":
+        return "json";
+      case "md":
+      case "markdown":
+        return "markdown";
+      case "go":
+        return "go";
+      case "rs":
+        return "rust";
+      case "cpp":
+      case "cxx":
+      case "cc":
+      case "c":
+      case "h":
+      case "hpp":
+        return "cpp";
+      case "java":
+        return "java";
+      case "sh":
+      case "bash":
+        return "shell";
+      case "yaml":
+      case "yml":
+        return "yaml";
+      case "sql":
+        return "sql";
+      case "svg":
+      case "png":
+      case "jpg":
+      case "jpeg":
+      case "webp":
+      case "gif":
+        return "image";
+      default:
+        return "text";
+    }
+  }
+
+  _detectFileMimeType(filename) {
+    const ext = filename?.split(".").pop()?.toLowerCase();
+    switch (ext) {
+      case "js":
+      case "jsx":
+      case "mjs":
+        return "application/javascript";
+      case "ts":
+      case "tsx":
+        return "application/typescript";
+      case "json":
+        return "application/json";
+      case "html":
+        return "text/html";
+      case "css":
+        return "text/css";
+      case "md":
+        return "text/markdown";
+      case "py":
+        return "text/x-python";
+      case "go":
+        return "text/x-go";
+      case "rs":
+        return "text/x-rust";
+      case "cpp":
+      case "c":
+        return "text/x-c++src";
+      case "java":
+        return "text/x-java-source";
+      case "png":
+        return "image/png";
+      case "jpg":
+      case "jpeg":
+        return "image/jpeg";
+      case "svg":
+        return "image/svg+xml";
+      case "gif":
+        return "image/gif";
+      default:
+        return "text/plain";
+    }
   }
 
   /**
@@ -1217,7 +1539,16 @@ export WORKSPACE="/workspace"
 export HOME="$WORKSPACE_ROOT"
 export USER="developer"
 export PS1="developer@cloudforge:/workspace$ "
+export npm_config_progress=false
+export npm_config_audit=false
+export npm_config_fund=false
+export npm_config_update_notifier=false
+export npm_config_prefer_offline=true
+export CI=true
+
 alias dir="ls -la" 2>/dev/null || true
+alias npm="npm --no-audit --no-fund --no-progress" 2>/dev/null || true
+alias npx="npx --no-audit --no-fund" 2>/dev/null || true
 `;
     try {
       fs.writeFileSync(rcFilePath, rcContent, "utf8");
@@ -1359,6 +1690,77 @@ alias dir="ls -la" 2>/dev/null || true
       return this._sanitizeOutputPaths(str, workspaceDir);
     };
 
+    // Shared warm NPM package cache directory
+    const sharedNpmCache = path.join(os.tmpdir(), "cloudforge_shared_npm_cache");
+    if (!fs.existsSync(sharedNpmCache)) {
+      try {
+        fs.mkdirSync(sharedNpmCache, { recursive: true });
+      } catch {
+        // ignore
+      }
+    }
+
+    // High-performance sandbox environment (optimizes npm, npx, and CLI tool rendering)
+    const sandboxEnv = {
+      ...process.env,
+      WORKSPACE: "/workspace",
+      HOME: workspaceDir,
+      USER: "developer",
+      ENV: rcFilePath,
+      TERM: "xterm-256color",
+      COLORTERM: "truecolor",
+      npm_config_cache: sharedNpmCache,
+      npm_config_prefer_offline: "true",
+      npm_config_audit: "false",
+      npm_config_fund: "false",
+      npm_config_progress: "false",
+      npm_config_update_notifier: "false",
+      CI: "true",
+      PAGER: "cat",
+    };
+
+    // High-throughput 16ms output buffer to prevent WebSocket packet floods during npm installs
+    const createStreamer = (callback) => {
+      let buf = "";
+      let timer = null;
+
+      const flush = () => {
+        if (buf && callback) {
+          callback(buf);
+          buf = "";
+        }
+        timer = null;
+      };
+
+      return {
+        write: (chunk) => {
+          const clean = sanitizeChunk(chunk);
+          if (!clean) return;
+          buf += clean;
+          if (buf.length >= 2048) {
+            if (timer) clearTimeout(timer);
+            flush();
+          } else if (!timer) {
+            timer = setTimeout(flush, 16);
+          }
+        },
+        flushDirect: (data) => {
+          if (timer) clearTimeout(timer);
+          flush();
+          if (data && callback) callback(data);
+        },
+        destroy: () => {
+          if (timer) clearTimeout(timer);
+          buf = "";
+        },
+      };
+    };
+
+    const streamer = createStreamer(onData);
+
+    // Start disk workspace watcher so changes made in terminal reflect immediately in UI
+    this.startWorkspaceWatcher(projectId);
+
     // 1. Try real Windows ConPTY/WinPTY terminal session via node-pty (Full TTY, arrow keys, Tab completion, interactive CLI)
     let ptyModule = null;
     try {
@@ -1376,30 +1778,23 @@ alias dir="ls -la" 2>/dev/null || true
           rows: rows || 24,
           useConpty: false,
           cwd: workspaceDir,
-          env: {
-            ...process.env,
-            WORKSPACE: "/workspace",
-            HOME: workspaceDir,
-            USER: "developer",
-            ENV: rcFilePath,
-            TERM: "xterm-256color",
-            COLORTERM: "truecolor",
-          },
+          env: sandboxEnv,
         });
 
-        if (onData) onData(banner);
+        streamer.flushDirect(banner);
 
         ptyProc.onData((data) => {
-          const clean = sanitizeChunk(data);
-          if (clean && onData) onData(clean);
+          streamer.write(data);
         });
 
         ptyProc.onExit(({ exitCode }) => {
+          streamer.destroy();
           try {
             if (fs.existsSync(rcFilePath)) fs.unlinkSync(rcFilePath);
           } catch {
             // ignore
           }
+          this.scheduleDiskSync(projectId, 100);
           if (onExit) onExit(exitCode || 0);
         });
 
@@ -1422,6 +1817,7 @@ alias dir="ls -la" 2>/dev/null || true
           },
           kill: () => {
             try {
+              streamer.destroy();
               if (fs.existsSync(rcFilePath)) fs.unlinkSync(rcFilePath);
               ptyProc.kill();
             } catch {
@@ -1437,36 +1833,28 @@ alias dir="ls -la" 2>/dev/null || true
     if (bashBin) {
       const proc = spawn(bashBin, shellArgs, {
         cwd: workspaceDir,
-        env: {
-          ...process.env,
-          WORKSPACE: "/workspace",
-          HOME: workspaceDir,
-          USER: "developer",
-          ENV: rcFilePath,
-          TERM: "xterm-256color",
-          COLORTERM: "truecolor",
-        },
+        env: sandboxEnv,
         stdio: ["pipe", "pipe", "pipe"],
       });
 
-      if (onData) onData(banner);
+      streamer.flushDirect(banner);
 
       proc.stdout?.on("data", (d) => {
-        const clean = sanitizeChunk(d);
-        if (clean && onData) onData(clean);
+        streamer.write(d);
       });
 
       proc.stderr?.on("data", (d) => {
-        const clean = sanitizeChunk(d);
-        if (clean && onData) onData(clean);
+        streamer.write(d);
       });
 
       proc.on("close", (code) => {
+        streamer.destroy();
         try {
           if (fs.existsSync(rcFilePath)) fs.unlinkSync(rcFilePath);
         } catch {
           // ignore
         }
+        this.scheduleDiskSync(projectId, 100);
         if (onExit) onExit(code || 0);
       });
 
@@ -1483,6 +1871,7 @@ alias dir="ls -la" 2>/dev/null || true
         resize: () => {},
         kill: () => {
           try {
+            streamer.destroy();
             if (fs.existsSync(rcFilePath)) fs.unlinkSync(rcFilePath);
             proc.kill();
           } catch {
@@ -1499,27 +1888,23 @@ alias dir="ls -la" 2>/dev/null || true
 
     const proc = spawn(fallbackCmd, fallbackArgs, {
       cwd: workspaceDir,
-      env: {
-        ...process.env,
-        WORKSPACE: "/workspace",
-        TERM: "xterm-256color",
-      },
+      env: sandboxEnv,
       stdio: ["pipe", "pipe", "pipe"],
     });
 
-    if (onData) onData(banner);
+    streamer.flushDirect(banner);
 
     proc.stdout?.on("data", (d) => {
-      const clean = sanitizeChunk(d);
-      if (clean && onData) onData(clean);
+      streamer.write(d);
     });
 
     proc.stderr?.on("data", (d) => {
-      const clean = sanitizeChunk(d);
-      if (clean && onData) onData(clean);
+      streamer.write(d);
     });
 
     proc.on("close", (code) => {
+      streamer.destroy();
+      this.scheduleDiskSync(projectId, 100);
       if (onExit) onExit(code || 0);
     });
 
@@ -1536,6 +1921,7 @@ alias dir="ls -la" 2>/dev/null || true
       resize: () => {},
       kill: () => {
         try {
+          streamer.destroy();
           proc.kill();
         } catch {
           // ignore

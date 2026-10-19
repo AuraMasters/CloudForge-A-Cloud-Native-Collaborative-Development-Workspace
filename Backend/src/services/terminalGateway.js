@@ -186,6 +186,10 @@ class TerminalGateway {
             case "input":
               if (msg.data && ptySession && ptySession.write) {
                 ptySession.write(msg.data);
+                // If user pressed Enter, schedule disk sync to pick up created/modified files
+                if (typeof msg.data === "string" && (msg.data.includes("\r") || msg.data.includes("\n"))) {
+                  containerService.scheduleDiskSync(projectId, 800);
+                }
               }
               break;
 
@@ -196,11 +200,11 @@ class TerminalGateway {
               break;
 
             case "sync_files":
-              await containerService.syncFilesToWorkspace(projectId);
+              const syncedFiles = await containerService.syncDiskToDatabase(projectId);
               ws.send(
                 JSON.stringify({
                   type: "notification",
-                  message: "Workspace files synchronized with container.",
+                  message: `Workspace synchronized (${syncedFiles.length} files).`,
                 })
               );
               break;

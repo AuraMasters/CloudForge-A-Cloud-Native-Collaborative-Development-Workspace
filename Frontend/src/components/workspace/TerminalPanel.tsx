@@ -13,6 +13,7 @@ import {
   Trash2,
 } from "lucide-react";
 import { useTheme } from "../../context/ThemeContext";
+import { useAlert } from "../../hooks/useAlert";
 import { containerService } from "../../services/containerService";
 import { type ContainerInfo, type DockerStatus, type TerminalTab } from "../../types/container";
 
@@ -308,6 +309,8 @@ export const TerminalPanel: React.FC<TerminalPanelProps> = ({
     }
   };
 
+  const { showSuccess, showError } = useAlert();
+
   const handleSyncFiles = async () => {
     setIsActionLoading(true);
     try {
@@ -315,9 +318,9 @@ export const TerminalPanel: React.FC<TerminalPanelProps> = ({
       if (wsRef.current && wsRef.current.readyState === WebSocket.OPEN) {
         wsRef.current.send(JSON.stringify({ type: "sync_files" }));
       }
-      alert(res.message);
+      showSuccess(res.message || "Workspace files synchronized with disk.");
     } catch (err: any) {
-      alert(err.message);
+      showError(err.message || "Failed to sync files.");
     } finally {
       setIsActionLoading(false);
     }
