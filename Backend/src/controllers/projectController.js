@@ -22,6 +22,63 @@ export const createProject = async (req, res) => {
       envVariables,
     });
 
+    // Automatically seed starter files so every project starts with a functioning workspace
+    const defaultName = (name || "cloudforge-app").toLowerCase().replace(/[^a-z0-9]/g, "-");
+    const starterFiles = [
+      {
+        name: "index.js",
+        path: "/index.js",
+        type: "file",
+        language: "javascript",
+        mimeType: "application/javascript",
+        content: `// CloudForge Cloud Workspace\nconsole.log("CloudForge container runtime active.");\n\nfunction main() {\n  console.log("Hello from /workspace/index.js!");\n}\n\nmain();\n`,
+      },
+      {
+        name: "package.json",
+        path: "/package.json",
+        type: "file",
+        language: "json",
+        mimeType: "application/json",
+        content: JSON.stringify(
+          {
+            name: defaultName,
+            version: "1.0.0",
+            description: description || "CloudForge project",
+            main: "index.js",
+            scripts: {
+              start: "node index.js",
+            },
+          },
+          null,
+          2
+        ),
+      },
+      {
+        name: "README.md",
+        path: "/README.md",
+        type: "file",
+        language: "markdown",
+        mimeType: "text/markdown",
+        content: `# ${name}\n\n${description || "Created on CloudForge Cloud Development Workspace."}\n\n## Getting Started\n\nRun the application in the terminal:\n\`\`\`bash\nnode index.js\n\`\`\`\n`,
+      },
+    ];
+
+    for (const item of starterFiles) {
+      await ProjectFile.create({
+        projectId: project._id,
+        name: item.name,
+        path: item.path,
+        type: item.type,
+        language: item.language,
+        mimeType: item.mimeType,
+        content: item.content,
+        size: Buffer.byteLength(item.content, "utf8"),
+      });
+    }
+
+    // Immediately sync starter files to disk workspace
+    await containerService.syncFilesToWorkspace(project._id);
+
     res.status(201).json({
       message: "Project created successfully",
       project,
