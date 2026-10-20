@@ -18,6 +18,27 @@ class ContainerService {
     )}&cols=${cols}&rows=${rows}${tokenParam}`;
   }
 
+  private async parseResponse<T = any>(res: Response, defaultErrMsg: string): Promise<T> {
+    const text = await res.text();
+    let data: any = null;
+    try {
+      data = text ? JSON.parse(text) : {};
+    } catch {
+      if (res.status === 429) {
+        throw new Error("Server rate limit or bot challenge encountered (HTTP 429). Please wait a few seconds and try again.");
+      }
+      if (res.status >= 500) {
+        throw new Error(`Cloud server is waking up or temporarily unavailable (HTTP ${res.status}). Please try again.`);
+      }
+      throw new Error(`${defaultErrMsg} (HTTP ${res.status})`);
+    }
+
+    if (!res.ok) {
+      throw new Error(data?.message || data?.error || defaultErrMsg);
+    }
+    return data as T;
+  }
+
   /**
    * Fetch live container, Docker daemon, and Cloud Runner status for a project
    */
@@ -26,11 +47,7 @@ class ContainerService {
       credentials: "include",
       headers: getAuthHeaders(),
     });
-    if (!res.ok) {
-      const data = await res.json().catch(() => ({}));
-      throw new Error(data.message || `Failed to fetch container status (${res.status})`);
-    }
-    return await res.json();
+    return await this.parseResponse<ContainerStatusResponse>(res, "Failed to fetch container status");
   }
 
   /**
@@ -43,11 +60,7 @@ class ContainerService {
       credentials: "include",
       body: JSON.stringify({ env }),
     });
-    const data = await res.json();
-    if (!res.ok) {
-      throw new Error(data.message || "Failed to start container");
-    }
-    return data;
+    return await this.parseResponse(res, "Failed to start container");
   }
 
   /**
@@ -59,11 +72,7 @@ class ContainerService {
       credentials: "include",
       headers: getAuthHeaders(),
     });
-    const data = await res.json();
-    if (!res.ok) {
-      throw new Error(data.message || "Failed to stop container");
-    }
-    return data;
+    return await this.parseResponse(res, "Failed to stop container");
   }
 
   /**
@@ -75,11 +84,7 @@ class ContainerService {
       credentials: "include",
       headers: getAuthHeaders(),
     });
-    const data = await res.json();
-    if (!res.ok) {
-      throw new Error(data.message || "Failed to restart container");
-    }
-    return data;
+    return await this.parseResponse(res, "Failed to restart container");
   }
 
   /**

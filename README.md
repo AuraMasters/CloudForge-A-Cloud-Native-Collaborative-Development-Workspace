@@ -1,464 +1,609 @@
-# CloudForge: Cloud-Native Collaborative Development Workspace
+# CloudForge: A Cloud-Native Collaborative Development Workspace
 
-## 1. Introduction
-
-CloudForge is a cloud-native, browser-based collaborative development platform designed to provide a complete software development environment without requiring extensive local configuration. It combines a browser-based IDE, isolated containerized workspaces, real-time collaboration, Git integration, cloud terminal access, and resource monitoring within a unified platform. 
-
-Docker provides isolated and consistent development environments, while cloud-native orchestration supports scalable workspace management. The platform is designed for developers, educational institutions, and engineering teams that require accessible, standardized, and collaborative development environments without local machine configuration overhead.
-
----
-
-## 2. Problem Statement
-
-Traditional development environments require developers to install and configure programming languages, libraries, frameworks, IDEs, compilers, databases, and other dependencies locally. Differences in operating systems, hardware architectures, package versions, and environment variables frequently lead to dependency conflicts and inconsistent execution environments. Collaborative development also requires developers to switch between disparate tools for coding, version control, communication, terminal operations, execution, and deployment.
-
-Existing cloud-based development solutions address several of these problems, but critical capabilities are often fragmented across separate systems. Collaborative editors primarily focus on concurrent text editing, container tools focus on environment isolation, and cloud IDE platforms focus on remote development. There is a need for a unified platform that combines isolated cloud workspaces, hierarchical file exploration, visual Git commit timelines, code execution, terminal access, and resource management into a single cohesive environment.
+[![License: MIT](https://img.shields.io/badge/License-MIT-blue.svg)](https://opensource.org/licenses/MIT)
+[![Node.js Version](https://img.shields.io/badge/Node.js-v18%2B%20%7C%20v20%2B%20%7C%20v24%2B-green.svg)](https://nodejs.org/)
+[![React Version](https://img.shields.io/badge/React-19.0-61dafb.svg)](https://react.dev/)
+[![TypeScript](https://img.shields.io/badge/TypeScript-6.0-blue.svg)](https://www.typescriptlang.org/)
+[![Vite](https://img.shields.io/badge/Vite-8.2-646CFF.svg)](https://vitejs.dev/)
+[![Tailwind CSS](https://img.shields.io/badge/Tailwind-v4.0-38bdf8.svg)](https://tailwindcss.com/)
+[![Express.js](https://img.shields.io/badge/Express-5.2-000000.svg)](https://expressjs.com/)
+[![MongoDB](https://img.shields.io/badge/MongoDB-Mongoose%209.9-47A248.svg)](https://www.mongodb.com/)
+[![Docker](https://img.shields.io/badge/Docker-Dockerode%20Engine-2496ED.svg)](https://www.docker.com/)
+[![WebSockets](https://img.shields.io/badge/WebSockets-Real--Time%20WS-ff69b4.svg)](https://developer.mozilla.org/en-US/docs/Web/API/WebSockets_API)
+[![Build Status](https://img.shields.io/badge/Build-Passing%20(0%20errors)-brightgreen.svg)]()
 
 ---
 
-## 3. Objectives
+## Table of Contents
 
-* Develop a browser-based development environment accessible across diverse client devices and operating systems.
-* Provide isolated, reproducible development workspaces using containerization principles.
-* Eliminate dependency conflicts and machine-specific configuration discrepancies across developer environments.
-* Enable seamless workspace navigation with a full-featured hierarchical file explorer and multi-tab code editor.
-* Integrate visual Git operations directly into the development environment, including branch management, working tree diffing, commit history graphs, and GitHub synchronization.
-* Provide a browser-accessible cloud terminal for workspace operations and task management.
-* Monitor workspace resource consumption, including CPU, memory, storage, and active processes.
-* Provide persistent project workspaces with reliable multi-file hierarchy and metadata persistence.
-* Design the platform using scalable cloud-native principles such as container orchestration, load balancing, caching, asynchronous processing, and automated deployment.
-
----
-
-## 4. Key Features
-
-| Feature | Description |
-| :--- | :--- |
-| Browser-Based IDE | Web-based coding environment with multi-tab navigation, line numbers gutter, syntax formatting, in-editor search, dynamic font scaling, and word wrap. |
-| Hierarchical File Explorer | Multi-level tree navigation with collapsible folders, extension-aware syntax icons, in-place file/folder renaming, recursive deletion, and multi-file uploads. |
-| Source Control & Staging | Git working tree state management separating staged and unstaged changes, with modification badges (A, M, D) and stage/unstage/discard actions. |
-| Visual Commit Timeline | VS Code-style commit timeline graph displaying author metadata, commit hashes, timestamps, and an interactive commit diff viewer. |
-| Side-by-Side & Unified Diff | Comprehensive diff inspection tool displaying additions and deletions with colored inline highlighting. |
-| GitHub Remote Integration | Direct integration with GitHub REST API v3 to link existing repositories, publish new repositories, and perform bidirectional synchronization. |
-| Template Presets | Pre-configured starter templates for React + TypeScript, Node.js Express, Python App, HTML/CSS/JS, and Blank projects with in-place re-seeding. |
-| Project Export as ZIP | Client-side archive bundling allowing users to download their entire workspace as a structured ZIP file. |
-| Containerized Terminal | Integrated browser terminal shell supporting command execution, Git logs, status inspection, and operational monitoring. |
-| Resource Monitoring | Visibility into CPU, memory, storage, and container health metrics. |
-| Persistent Storage | Preserves project directory structures, file contents, and commit history across workspace sessions. |
-
----
-
-## 5. Literature Review
-
-The paradigm of software development environments has undergone significant evolution over the past decade, transitioning from isolated local desktop IDEs toward cloud-native, containerized, and collaborative development workspaces. To establish a rigorous theoretical and empirical foundation for **CloudForge**, this literature review analyzes ten landmark research publications (`RP_1` to `RP_10`) spanning container orchestration, cloud development environments (CDEs), synchronous/asynchronous collaborative programming, and DevOps version-control integration.
-
-### 5.1 Comparative Summary of Reviewed Research Papers
-
-| # | Research Paper & Authors | Year & Venue | Core Contribution & Methodology | Critical Limitations & Identified Gaps |
-| :---: | :--- | :---: | :--- | :--- |
-| **RP 1** | **Leveraging Container Orchestration with Docker and Kubernetes for Web-Based Integrated Development Environments (IDEs)**<br>*Y. Tayyebi, K. S. Rohilla, K. Dutta, N. Chouhan, M. Rathore, J. Sharma, K. Raikwar* | 2025<br>PIEMR / J. Comp. Sci. | Investigated microservices-based web IDE architecture utilizing Docker container isolation and Kubernetes horizontal pod autoscaling (HPA) for multi-tenant developer isolation. | Focuses primarily on backend cluster orchestration without providing integrated visual Git staging, interactive diff inspection, or lightweight zero-install client workspace persistence. |
-| **RP 2** | **Real Time Code Collaborator: A Cloud-Based Platform for Seamless Multi-User Programming**<br>*S. T. S., S. M, S. G, S. G, Y. S. L* | 2025<br>IJARCCE (Vol. 14, Iss. 12)<br>`10.17148/IJARCCE.2025.141276` | Developed a full-stack real-time code collaborator (RTCC) using WebSockets for sub-second edit synchronization and Docker execution sandboxes with embedded audio/chat. | Tailored specifically for transient coding interviews and pair sessions; lacks persistent project directory hierarchies, commit graphs, and bidirectional GitHub repository synchronization. |
-| **RP 3** | **Cloud vs. Local Development Stacks: Leveraging CDE and PaaS Platforms for Academic Web Development Labs**<br>*R. I. Zuhairnawan, U. Y. K. S. Hediyanto, M. Fathinuddin* | 2026<br>e-Proc. of Engineering (Vol. 13, No. 1) | Conducted empirical benchmarking of four commercial/open-source CDEs (Codespaces, CodeSandbox, Devspace, DevZero) and four PaaS systems (Render, Koyeb, Northflank, Lade) for booting time, latency, and resource footprint. | Evaluates existing third-party platforms without offering a unified, lightweight standalone architecture that consolidates visual version control, template switching, and browser terminal management. |
-| **RP 4** | **Creating a Standardized Environment for Efficient Learning Management using GitHub Codespaces and GitHub Classroom**<br>*A. D. Snowberger, K. You* | 2024<br>J. Pract. Eng. Educ. (Vol. 16, No. 3)<br>`10.14702/JPEE.2024.267` | Demonstrated containerized devcontainer workflows in educational computer science labs to eliminate local setup friction, eliminate configuration drift, and standardize assignment grading. | Highly dependent on proprietary Microsoft/GitHub ecosystem quotas and heavy VM backends; requires non-trivial devcontainer configuration files and lacks customizable lightweight web hosting. |
-| **RP 5** | **CoVSCode: A Novel Real-Time Collaborative Programming Environment for Lightweight IDE**<br>*H. Fan, K. Li, X. Li, T. Song, W. Zhang, Y. Shi, B. Du* | 2019<br>Applied Sciences (MDPI, Vol. 9, Iss. 21)<br>`10.3390/app9214611` | Designed an Operational Transformation (OT) and distributed state consistency extension for Visual Studio Code, enabling multi-cursor tracking and simultaneous buffer editing. | Confined strictly to desktop VS Code installations requiring pre-installed client software; lacks zero-install browser access, containerized remote runtime execution, and cloud document storage. |
-| **RP 6** | **The Impact of Docker, DevOps, and GitHub on Collaborative Open Source Software Development**<br>*P. S. Emmanni* | 2023<br>EJAET (Vol. 10, Iss. 8) | Empirically analyzed the synergy between Docker containers, automated CI/CD pipelines, and GitHub distributed version control in accelerating developer onboarding and code review quality. | Qualitative and empirical analysis of development methodologies without proposing an integrated software architecture or embedding visual Git workflows directly within a browser IDE. |
-| **RP 7** | **ATCoPE: Any-Time Collaborative Programming Environment for Seamless Integration of Real-Time and Non-Real-Time Teamwork**<br>*H. Fan, C. Sun, H. Shen* | 2012<br>ACM GROUP 2012<br>`10.1145/2389176.2389193` | Formulated the theoretical framework for "Any-Time Collaborative Programming", unifying synchronous pair programming with asynchronous branch-based version control systems (VCS). | Concentrates on concurrency algorithms and text-buffer synchronization models; lacks modern web container execution, RESTful GitHub integration, interactive diff UI, and cloud terminal access. |
-| **RP 8** | **Building Temporary Isolated Workspace in Real-Time Collaborative Programming Environment**<br>*J. Jiang, Y. Xie, B. Fang, M. Wang, H. Fan* | 2023<br>IEEE SMC / CollaborateCom | Proposed the RECON (Reversion of Error-free Code with Workspace Isolation) model to isolate broken intermediate code into temporary sandboxes so collaborators can compile and test unhindered. | Restricted to buffer-level syntactic isolation; does not address end-to-end cloud workspace persistence, multi-file project lifecycle management, remote Git hosting, or full terminal virtualization. |
-| **RP 9** | **DoCloud: An Elastic Cloud Platform for Web Applications Based on Docker**<br>*C. Kan* | 2016<br>IEEE ICACT 2016<br>`10.1109/ICACT.2016.7423440` | Architected an elastic cloud hosting platform leveraging lightweight Docker containers with hybrid reactive threshold-based and predictive ARMA scaling algorithms. | Tailored exclusively for backend application deployment and server autoscaling; lacks an interactive developer-facing IDE interface, client code editor, file explorer, or source control tooling. |
-| **RP 10** | **ChainIDE: A Cloud-Based Integrated Development Environment for Cross-Blockchain Smart Contracts**<br>*H. Qiu, X. Wu, S. Zhang, V. C. M. Leung, W. Cai* | 2020<br>IEEE/ACM Blockchain | Designed a multi-ecosystem cloud IDE featuring zero-configuration cloud compilation, asynchronous compiler microservices, dynamic project templates, and web-based workspace virtualization. | Domain-specific for smart contract compilation and blockchain deployment; lacks generic full-stack software development workflows, interactive local Git staging/diffing, and bidirectional GitHub sync. |
+1. [Executive Summary & Vision](#1-executive-summary--vision)
+2. [Problem Statement & Motivation](#2-problem-statement--motivation)
+3. [Key Capabilities & Feature Matrix](#3-key-capabilities--feature-matrix)
+4. [System Architecture](#4-system-architecture)
+   - [Architectural Topology](#41-architectural-topology)
+   - [Subsystem Decomposition](#42-subsystem-decomposition)
+5. [Literature Review & Theoretical Foundation](#5-literature-review--theoretical-foundation)
+   - [Reviewed Papers (RP_1 to RP_10)](#51-reviewed-papers-rp_1-to-rp_10)
+   - [State-of-the-Art Research Gap Matrix](#52-state-of-the-art-research-gap-matrix)
+6. [Deep-Dive Feature Specifications](#6-deep-dive-feature-specifications)
+   - [6.1 Browser-Based Multi-Tab IDE & Monaco Editor](#61-browser-based-multi-tab-ide--monaco-editor)
+   - [6.2 Real-Time Collaboration & CRDT Document Sync](#62-real-time-collaboration--crdt-document-sync)
+   - [6.3 Container Sandboxing & Execution Isolation](#63-container-sandboxing--execution-isolation)
+   - [6.4 Jailed Cloud Terminal & WebSocket PTY Gateway](#64-jailed-cloud-terminal--websocket-pty-gateway)
+   - [6.5 Visual Git Engine, Diff Viewer & Commit Graph](#65-visual-git-engine-diff-viewer--commit-graph)
+   - [6.6 Live Web Application Preview & Reverse Proxy](#66-live-web-application-preview--reverse-proxy)
+   - [6.7 Interactive Multi-Language Execution & Jupyter Notebooks](#67-interactive-multi-language-execution--jupyter-notebooks)
+   - [6.8 Starter Template Presets & Client-Side ZIP Packaging](#68-starter-template-presets--client-side-zip-packaging)
+7. [Repository Layout & Directory Tree](#7-repository-layout--directory-tree)
+8. [Comprehensive REST API Reference](#8-comprehensive-rest-api-reference)
+9. [WebSocket Protocol Specifications](#9-websocket-protocol-specifications)
+10. [Localhost Installation & Quickstart Guide](#10-localhost-installation--quickstart-guide)
+    - [Prerequisites](#101-prerequisites)
+    - [Backend Setup (Zero-Config DB)](#102-backend-setup-zero-config-db)
+    - [Frontend Setup](#103-frontend-setup)
+    - [Dual-Mode Execution Configuration](#104-dual-mode-execution-configuration)
+11. [Environment Variables Reference](#11-environment-variables-reference)
+12. [Automated Verification & Test Suites](#12-automated-verification--test-suites)
+13. [Security Architecture & Threat Mitigation](#13-security-architecture--threat-mitigation)
+14. [Future Cloud-Native Scalability Roadmap](#14-future-cloud-native-scalability-roadmap)
+15. [License & Acknowledgments](#15-license--acknowledgments)
 
 ---
 
-### 5.2 Thematic Synthesis & Detailed Paper Analysis
+## 1. Executive Summary & Vision
 
-#### Theme A: Cloud Container Orchestration & Elastic Web IDE Architectures (RP 1, RP 9, RP 10)
-* **Container-Native Scaling**: Tayyebi et al. (**RP 1**) and Kan (**RP 9**) demonstrated that containerization via Docker drastically minimizes the virtualization overhead traditionally associated with hypervisor-based Virtual Machines (VMs). By sharing the host OS kernel, containers enable rapid instantiation (<2 seconds) and elastic resource scaling through predictive (ARMA) and reactive threshold algorithms.
-* **Domain-Specific Cloud Virtualization**: Qiu et al. (**RP 10**) highlighted the effectiveness of offloading compilation and build pipelines to cloud microservices through ChainIDE, establishing that zero-configuration web environments dramatically lower developer barrier-to-entry.
-* **Architectural Shortcoming**: While these systems provide robust backend isolation and elastic compute scaling, they treat the developer interface as a thin execution portal, neglecting deep client-side developer tooling such as interactive visual branch switching, commit diff graphs, in-browser terminal interaction, and full multi-file project hierarchies.
+**CloudForge** is an open-source, cloud-native, browser-based collaborative development platform designed to deliver an end-to-end software engineering environment directly within any modern web browser. It completely eliminates local machine configuration overhead, cross-platform dependency drift, and the notorious *"works on my machine"* syndrome.
 
-#### Theme B: Collaborative Programming & Workspace State Isolation (RP 2, RP 5, RP 7, RP 8)
-* **Real-Time Synchronous Concurrency**: Shruthi et al. (**RP 2**) and Fan et al. (**RP 5**) explored WebSocket communication and Operational Transformation (OT) to achieve sub-second multi-user document synchrony.
-* **Bridging Synchronous & Asynchronous Paradigms**: Fan et al. (**RP 7**) identified that synchronous pair-programming and asynchronous version-controlled branching are complementary rather than mutually exclusive. Jiang et al. (**RP 8**) further advanced this by proposing RECON to isolate broken intermediate code into sandbox buffers, preventing build breakages among co-developers.
-* **Architectural Shortcoming**: These collaborative systems operate primarily at the in-memory text buffer level. They lack end-to-end workspace lifecycle management, hierarchical directory trees, persistent document schemas, visual staging areas (Staged vs. Unstaged changes), and bi-directional synchronization with remote version control providers (GitHub REST API).
-
-#### Theme C: Cloud Development Environments (CDEs), DevOps & Standardized Labs (RP 3, RP 4, RP 6)
-* **Overcoming Configuration Drift**: Zuhairnawan et al. (**RP 3**) and Snowberger & You (**RP 4**) demonstrated that local machine disparities create severe friction ("works on my machine" syndrome), particularly in educational and engineering team settings. Containerized CDEs (e.g., GitHub Codespaces) resolve this by standardizing operating systems, libraries, and compiler toolchains.
-* **DevOps Synergy**: Emmanni (**RP 6**) showed that uniting containerization with distributed version control (GitHub) and CI/CD pipelines significantly shortens development feedback loops and enhances software quality.
-* **Architectural Shortcoming**: Existing commercial CDEs (Codespaces, Gitpod) rely on resource-heavy VM provisioning, proprietary cloud ecosystems, high subscription costs, and complex devcontainer configuration files. There remains a critical need for an independent, lightweight, browser-accessible cloud IDE that combines full visual Git source control, instant template seeding, client-side ZIP exports, and terminal monitoring into a unified platform.
+By uniting an industrial-grade code editor (**Monaco Editor**), multi-user synchronous editing powered by **Conflict-Free Replicated Data Types (CRDTs)**, containerized sandboxes (**Dockerode**), a real-time WebSocket **Cloud Shell**, visual **Git source control & commit timeline graphs**, an integrated **Live Web App Preview reverse proxy**, and **dynamic starter templates**, CloudForge brings the power of full-stack desktop IDEs to an instant-boot, zero-install web interface.
 
 ---
 
-## 6. Research Gap Analysis
+## 2. Problem Statement & Motivation
 
-While prior literature has extensively explored isolated facets of cloud computing, collaborative editing, and container orchestration, significant architectural and functional gaps persist when attempting to deliver a cohesive, zero-configuration cloud development environment.
+Traditional software engineering workflows impose substantial friction on developers, educational institutions, and distributed teams:
 
-### 6.1 Dimensional Research Gap Comparison
+1. **Dependency Hell & Machine Configuration Drift:** Developers spend hours configuring SDKs, runtimes (Python, Node.js, C++, Java), system paths, compilers, and database daemons. Inevitable differences across Windows, macOS, and Linux cause subtle runtime failures.
+2. **Fragmented Developer Toolchains:** Developers must constantly toggle between disparate applications: a local text editor, an operating system terminal, a separate Git GUI client (or CLI commands), browser windows for web app previews, and third-party tools for pair programming.
+3. **Heavyweight Commercial Cloud IDEs:** Existing commercial solutions (such as GitHub Codespaces, Gitpod, or CodeSandbox) often impose heavy cloud credit costs, proprietary devcontainer configurations, vendor lock-in, and significant boot latency (>30 seconds) on cold starts.
+4. **Shallow Collaborative Editors:** Web-based collaborative tools typically focus on single-file transient buffers (like Google Docs or interview whiteboard pads) without true project directory trees, persistent document schemas, visual staging areas, branch switching, or bidirectional GitHub remote synchronization.
 
-```
-+---------------------------------------------------------------------------------------------------+
-|                                 STATE OF THE ART RESEARCH GAPS                                    |
-+------------------------------------+----------------------------------+---------------------------+
-| Research Dimension                 | Existing Literature              | CloudForge Approach       |
-+------------------------------------+----------------------------------+---------------------------+
-| 1. Version Control Integration     | CLI-only / External Web UI       | Embedded Visual Git Graph |
-| 2. Development Setup Overhead      | Heavy Devcontainers / VM Quotas  | Zero-Install Browser IDE  |
-| 3. Buffer vs. Workspace Lifecycle  | In-memory Ephemeral Buffers      | Full MongoDB Tree Schema  |
-| 4. Diff & Change Inspection        | Basic Text Differences           | Side-by-Side Unified Diff |
-| 5. Project Starter & Re-seeding    | Static Single Repositories       | In-Place Template Switch  |
-| 6. Remote Repository Interop       | One-way Clones / Manual Pulls    | Bidirectional GitHub REST |
-+------------------------------------+----------------------------------+---------------------------+
-```
-
-| Identified Research Gap Dimension | Prior State-of-the-Art (Literature References) | Limitations in Existing Work | CloudForge Integrated Solution |
-| :--- | :--- | :--- | :--- |
-| **1. Fragmentation Between Web IDEs and Visual Git Version Control** | RP 1 (Tayyebi et al.), RP 6 (Emmanni), RP 10 (Qiu et al.) | Cloud IDEs either omit version control or force developers to switch to external web tabs or complex CLI commands. | Directly embeds a visual Git source control panel featuring staged/unstaged change tracking, modification badges (A, M, D), commit history graphs, and interactive commit diff modals. |
-| **2. Heavyweight Resource Footprint & Vendor Lock-In of Commercial CDEs** | RP 3 (Zuhairnawan et al.), RP 4 (Snowberger & You) | Commercial CDEs (Codespaces, Gitpod) require high cloud credits, heavy VM startup times (>30s), and complex devcontainer specs. | Delivers a lightweight, instant-boot web IDE (React 19 + Vite) backed by Node.js/Express and MongoDB, offering complete workspace accessibility across low-spec client hardware. |
-| **3. In-Memory Ephemeral Buffers vs. Persistent Multi-File Hierarchy** | RP 2 (Shruthi et al.), RP 5 (Fan et al.), RP 8 (Jiang et al.) | Collaborative coding platforms focus on transient, single-buffer editing sessions without persistent directory trees. | Implements a robust multi-level hierarchical File Explorer with extension-aware icons, recursive deletion, in-place renaming, folder creation, and multi-file drag-and-drop upload. |
-| **4. Inadequate Inline & Side-by-Side Diff Inspection** | RP 7 (Fan et al.), RP 8 (Jiang et al.) | Theoretical collaborative models lack interactive visual tools for inspecting working-tree changes prior to commit. | Provides an integrated Side-by-Side and Unified Diff Viewer displaying additions and deletions with syntax-aware line highlighting and split/unified viewing modes. |
-| **5. Lack of Dynamic Template Switching & Workspace Re-Seeding** | RP 4 (Snowberger & You), RP 10 (Qiu et al.) | Workspace initialization is static; switching project stacks requires tearing down and recreating entire cloud instances. | Features an in-place Starter Template Engine supporting dynamic switching between React+TS, Node.js Express, Python App, HTML/CSS/JS, and Blank presets with automatic commit generation. |
-| **6. Disconnect Between Cloud Workspaces and Remote Git Ecosystems** | RP 2 (Shruthi et al.), RP 6 (Emmanni), RP 7 (Fan et al.) | Web IDEs operate in isolated silos without native API-level synchronization with developers' existing remote code repositories. | Implements direct bidirectional GitHub REST API v3 integration enabling users to link existing GitHub repos, publish fresh repositories, and sync commits directly from the workspace. |
+**CloudForge solves this by delivering a lightweight, zero-configuration, fully self-hostable cloud development workspace accessible from any browser.**
 
 ---
 
-### 6.2 Deep-Dive into Core Research Gaps
+## 3. Key Capabilities & Feature Matrix
 
-#### 1. The Version Control & Staging Interface Gap
-Existing web IDE research frequently treats version control as a backend artifact rather than a core visual interaction paradigm. Developers using traditional web IDEs must rely on terminal CLI commands (`git add`, `git diff`, `git commit`), which have a steep learning curve and lack visual feedback. **CloudForge** closes this gap by providing an interactive Source Control dock with selective file staging/unstaging, discard functionality, visual status pills, commit message authoring, and a graphical commit timeline graph.
-
-#### 2. The Granular Workspace Persistence & Export Gap
-Most collaborative research prototypes (e.g., RTCC, CoVSCode) maintain state in volatile memory or single flat files, making them unsuitable for real-world full-stack multi-file projects. **CloudForge** introduces a schema-backed persistence model where directory trees, file contents, language associations, and commit histories are persistently stored in MongoDB, while providing instant client-side ZIP archive bundling (`JSZip`) for offline portability.
-
-#### 3. The Unified Cloud-Native Development Lifecycle Gap
-The primary overarching research gap identified across all ten papers is the **absence of a unified, lightweight cloud-native development platform that seamlessly integrates browser coding, multi-tab editing, hierarchical file exploration, visual version control, template presets, cloud terminal monitoring, and bidirectional GitHub remote repository synchronization within a single cohesive workflow**. CloudForge directly addresses this overarching gap by delivering an end-to-end cloud-native developer workspace.
+| Feature | CloudForge Implementation | Benefit to Developers |
+| :--- | :--- | :--- |
+| **Browser-Based IDE** | Monaco Editor, multi-tabs, line gutter, minimap, find/replace, custom themes | Rich, VS Code-familiar editing environment without local installs |
+| **Hierarchical File Explorer** | Expandable/collapsible tree, syntax icons, multi-file upload, recursive delete/rename | Full multi-file project structure and directory management |
+| **Real-Time Collaboration** | Yjs CRDTs, WebSocket gateway (`/ws/collaboration`), live cursor tracking, activity feed | Sub-millisecond synchronous pair-programming with mathematical convergence |
+| **Container Sandboxing** | Dockerode container isolation with automatic local workspace sandbox fallback | Safe, reproducible code execution environments for every project |
+| **Interactive Cloud Shell** | Xterm.js + WebSocket gateway (`/ws/terminal`), jailed to `/workspace`, disk-to-DB sync | Full bash/sh shell execution, CLI compilation, and package management |
+| **Visual Git & Source Control** | Staged vs. unstaged tracking, status pills (A, M, D), commit timeline graph, branch switcher | Intuitive Git management without memorizing complex CLI commands |
+| **Side-by-Side & Unified Diff** | Dual-mode diff viewer with colored inline character/line additions and deletions | Comprehensive pre-commit inspection and review of commit history |
+| **Bidirectional GitHub Sync** | GitHub REST API v3 integration for remote linking, repo publishing, and tree pulls | Seamless interoperability with existing GitHub repositories |
+| **Live Web App Preview** | Dynamic port detection, reverse proxy streaming (`/api/projects/:id/preview/:port`), split view | Real-time visual feedback for web applications directly in the IDE |
+| **Interactive Execution Kernel** | Jupyter Notebook (`.ipynb`) viewer, stateful cell execution for Python and JavaScript | Data science and rapid algorithmic experimentation in-browser |
+| **Dynamic Starter Templates** | React+TS, Node Express, Python, Go, Rust, C++, Java, Web, and Blank presets | Instant one-click project bootstrap and in-place stack re-seeding |
+| **Zero-Config Database** | Dual-mode Mongoose: auto-boots `mongodb-memory-server` if local MongoDB is absent | Runs instantly on any developer machine without pre-installed databases |
+| **Workspace Portability** | Client-side ZIP bundling via `JSZip` | Full local backup and export of project code at any time |
 
 ---
 
-## 7. System Architecture
+## 4. System Architecture
+
+### 4.1 Architectural Topology
 
 ```mermaid
 flowchart TD
-  subgraph Client ["Client Tier: React 19 + TypeScript + Vite"]
+  subgraph Client ["Client Tier (Browser - React 19 + TypeScript + Vite)"]
     UI["CloudForge Workspace Interface"]
-    ActivityBar["Activity Bar Dock"]
-    FileExplorer["Hierarchical File Explorer"]
-    SourceControl["Source Control & Commits Graph"]
-    Editor["Multi-Tab Code Editor"]
-    DiffViewer["Side-by-Side & Unified Diff Viewer"]
-    TerminalPanel["Terminal & Git Operational Log Panel"]
+    Monaco["Monaco Multi-Tab Editor"]
+    Xterm["Xterm.js Cloud Shell"]
+    CollabClient["Yjs CRDT Collaboration Client"]
+    PreviewIframe["Live Web App Preview (Split / Tab)"]
+    VCSUI["Source Control & Commit Graph UI"]
   end
 
-  subgraph Gateway ["Application Server Tier: Express.js"]
+  subgraph Gateway ["Application Gateway Tier (Node.js + Express 5.2)"]
     AuthMW["JWT & Cookie Authentication Middleware"]
-    ProjectController["Project Controller"]
-    WorkspaceController["Workspace Controller"]
-    GitHubService["GitHub REST API Service (Octokit / REST v3)"]
-    TemplateService["Starter Template Engine"]
+    ProjectCtrl["Project & Workspace Controllers"]
+    VCSCtrl["Git & Version Control Controllers"]
+    PreviewProxy["Preview Reverse Proxy & Port Scanner"]
+    TermWS["Terminal WebSocket Gateway (/ws/terminal)"]
+    CollabWS["Collaboration WebSocket Gateway (/ws/collaboration)"]
   end
 
-  subgraph Storage ["Persistence Tier: MongoDB"]
-    UserSchema[("Users & Credentials")]
-    ProjectSchema[("Projects & Metadata")]
-    ProjectFileSchema[("Project Files & Tree Nodes")]
-    ProjectCommitSchema[("Project Commits & Diff Patches")]
-    GitHubConnSchema[("GitHub OAuth Tokens")]
+  subgraph Compute ["Compute & Execution Tier (Docker & Host Sandbox)"]
+    DockerDaemon["Dockerode Dev Container (Node/Python/C++/Rust)"]
+    HostSandbox["Host Sandbox Fallback (Isolated Storage Subdir)"]
+    DiskWatcher["Real-Time Disk-to-DB File Watcher"]
   end
 
-  subgraph External ["External Services Tier"]
+  subgraph Storage ["Persistence & State Tier"]
+    MongoMemory[("MongoDB Memory Server (Zero-Config Fallback)")]
+    MongoAtlas[("MongoDB Atlas / Local MongoDB (Persistent URI)")]
+    LocalFS[("Workspace Storage Directory (/Backend/storage/)")]
+  end
+
+  subgraph External ["External Services"]
     GitHubAPI["GitHub REST API v3"]
-    UserRepositories["Remote User Repositories"]
   end
 
-  UI --> ActivityBar
-  ActivityBar --> FileExplorer
-  ActivityBar --> SourceControl
-  UI --> Editor
-  UI --> DiffViewer
-  UI --> TerminalPanel
+  UI --> Monaco
+  UI --> Xterm
+  UI --> VCSUI
+  UI --> PreviewIframe
 
-  FileExplorer -->|File CRUD & Uploads| WorkspaceController
-  SourceControl -->|Commit / Stage / Branch| WorkspaceController
-  Editor -->|Save File (Ctrl+S)| WorkspaceController
-  TerminalPanel -->|Terminal Commands| WorkspaceController
+  Monaco <-->|CRDT Binary Updates| CollabWS
+  Xterm <-->|Bidirectional PTY Stream| TermWS
+  PreviewIframe <-->|HTTP Reverse Proxy| PreviewProxy
+  VCSUI -->|REST API Requests| VCSCtrl
+  UI -->|File CRUD & Project API| ProjectCtrl
 
-  WorkspaceController --> AuthMW
-  ProjectController --> AuthMW
+  ProjectCtrl --> AuthMW
+  VCSCtrl --> AuthMW
+  PreviewProxy --> AuthMW
 
-  WorkspaceController --> ProjectFileSchema
-  WorkspaceController --> ProjectCommitSchema
-  WorkspaceController --> ProjectSchema
-  ProjectController --> ProjectSchema
-  AuthMW --> UserSchema
-  AuthMW --> GitHubConnSchema
+  ProjectCtrl --> DockerDaemon
+  ProjectCtrl -.-> HostSandbox
+  TermWS <--> DockerDaemon
+  TermWS -.-> HostSandbox
+  DiskWatcher <--> LocalFS
+  DiskWatcher -.-> ProjectCtrl
 
-  WorkspaceController <--> GitHubService
-  WorkspaceController <--> TemplateService
-  GitHubService <--> GitHubAPI
-  GitHubAPI <--> UserRepositories
+  ProjectCtrl --> MongoMemory
+  ProjectCtrl -.-> MongoAtlas
+  VCSCtrl <--> GitHubAPI
+```
+
+### 4.2 Subsystem Decomposition
+
+1. **Client Tier (`/Frontend`):** Built with React 19, TypeScript, and Vite. Utilizes `@monaco-editor/react` for high-performance syntax-highlighted code editing, `@xterm/xterm` for terminal rendering, `marked` and `katex` for technical documentation rendering, and `jszip` for client-side workspace packaging.
+2. **Application Gateway Tier (`/Backend`):** Built on Express 5.2 with modular controllers and middleware. It hosts two dedicated WebSocket gateways (`/ws/terminal` and `/ws/collaboration`), enforces JWT-based authentication guards, and proxies HTTP traffic to dynamically running ports inside workspaces.
+3. **Compute & Execution Tier:** Integrates `dockerode` to spin up isolated container runtimes with strict CPU/memory limits. When Docker is not available on the host, CloudForge seamlessly activates an isolated local workspace directory jail (`/Backend/storage/<projectId>/`).
+4. **Persistence Tier:** Utilizes Mongoose 9.9 with dual-mode connectivity: connects to an existing MongoDB URI or automatically spawns an in-memory database daemon via `mongodb-memory-server`.
+
+---
+
+## 5. Literature Review & Theoretical Foundation
+
+CloudForge is grounded in empirical research and peer-reviewed literature across container orchestration, cloud-based collaborative editing, and developer productivity environments.
+
+### 5.1 Reviewed Papers (RP_1 to RP_10)
+
+| ID | Title & Authors | Year & Venue | Core Contribution | Limitations & Research Gaps |
+| :---: | :--- | :---: | :--- | :--- |
+| **RP 1** | *Leveraging Container Orchestration with Docker and Kubernetes for Web-Based IDEs*<br>Y. Tayyebi et al. | 2025<br>PIEMR | Microservices web IDE using Docker containers and Kubernetes HPA for multi-tenant isolation. | Lacks visual Git staging, interactive diff inspection, and zero-install client workspace persistence. |
+| **RP 2** | *Real Time Code Collaborator: A Cloud-Based Platform for Seamless Multi-User Programming*<br>S. T. Shruthi et al. | 2025<br>IJARCCE | Full-stack collaborator using WebSockets for sub-second editing and Docker sandboxes. | Designed for transient interview pair sessions; lacks persistent directory trees, commit graphs, and GitHub sync. |
+| **RP 3** | *Cloud vs. Local Development Stacks: Leveraging CDE and PaaS Platforms for Academic Labs*<br>R. I. Zuhairnawan et al. | 2026<br>e-Proc. Eng. | Benchmarked CDEs (Codespaces, DevZero) and PaaS for boot time, latency, and resource footprint. | Evaluates existing commercial platforms without offering an open-source, lightweight standalone architecture. |
+| **RP 4** | *Creating a Standardized Environment for Learning Management using GitHub Codespaces*<br>A. D. Snowberger & K. You | 2024<br>JPEE | Containerized devcontainer workflows in computer science labs to eliminate setup friction. | Heavy dependency on proprietary Microsoft quotas; high cloud credit costs and VM boot delays. |
+| **RP 5** | *CoVSCode: A Novel Real-Time Collaborative Programming Environment for Lightweight IDE*<br>H. Fan et al. | 2019<br>MDPI Appl. Sci. | Operational Transformation (OT) extension for VS Code enabling multi-cursor tracking. | Confined strictly to desktop VS Code installations; lacks zero-install browser access and containerized runtimes. |
+| **RP 6** | *The Impact of Docker, DevOps, and GitHub on Collaborative Open Source Software Development*<br>P. S. Emmanni | 2023<br>EJAET | Empirical study on how Docker, CI/CD, and GitHub version control accelerate developer velocity. | Qualitative analysis without proposing an integrated architecture or embedding visual Git workflows in a browser IDE. |
+| **RP 7** | *ATCoPE: Any-Time Collaborative Programming Environment for Synchronous & Asynchronous Teamwork*<br>H. Fan et al. | 2012<br>ACM GROUP | Theoretical unification of synchronous pair programming with asynchronous branch version control. | Focuses on buffer concurrency algorithms; lacks modern web containers, GitHub API, diff UI, and cloud terminals. |
+| **RP 8** | *Building Temporary Isolated Workspace in Real-Time Collaborative Programming Environment*<br>J. Jiang et al. | 2023<br>IEEE SMC | RECON model isolating broken intermediate code into sandbox buffers during joint editing. | Restricted to buffer-level syntactic isolation; does not address multi-file project persistence or cloud terminals. |
+| **RP 9** | *DoCloud: An Elastic Cloud Platform for Web Applications Based on Docker*<br>C. Kan | 2016<br>IEEE ICACT | Elastic cloud hosting platform using Docker containers with predictive (ARMA) and reactive auto-scaling. | Tailored exclusively for server deployment; lacks developer IDE interface, file explorer, or source control tooling. |
+| **RP 10** | *ChainIDE: A Cloud-Based Integrated Development Environment for Smart Contracts*<br>H. Qiu et al. | 2020<br>IEEE/ACM Blockchain | Multi-ecosystem cloud IDE with cloud compilation, asynchronous compiler microservices, and templates. | Domain-specific for blockchain smart contracts; lacks generic full-stack developer tooling, visual Git, and terminal access. |
+
+### 5.2 State-of-the-Art Research Gap Matrix
+
+```
++---------------------------------------------------------------------------------------------------------+
+|                                    RESEARCH GAP TAXONOMY MATRIX                                         |
++------------------------------------+---------------------------------------+----------------------------+
+| Research Dimension                 | State-of-the-Art Literature           | CloudForge Unified Solution|
++------------------------------------+---------------------------------------+----------------------------+
+| 1. Version Control Integration     | CLI-only commands (RP 1, RP 6)        | Visual Git DAG & Diff UI   |
+| 2. Development Setup Overhead      | Heavy VMs & Subscription Quotas (RP 4)| Zero-Install Browser IDE   |
+| 3. Buffer vs. Workspace Lifecycle  | Transient In-Memory Buffers (RP 2, 8) | MongoDB Hierarchical Tree  |
+| 4. Diff & Change Inspection        | Basic Raw Text Differences (RP 7)     | Split & Unified Diff Engine|
+| 5. Project Starter & Re-seeding    | Static Single Repositories (RP 10)    | In-Place Template Engine   |
+| 6. Remote Repository Interop       | Manual Local Clones / Pulls (RP 6)    | Bidirectional GitHub REST  |
+| 7. Execution & Sandboxing          | Heavy Cloud Infrastructure (RP 3, 9)  | Dual-Mode Docker/Local Jail|
+| 8. In-Workspace Web App Preview    | External Browsers / Port Forwarding   | Integrated Reverse Proxy   |
++------------------------------------+---------------------------------------+----------------------------+
 ```
 
 ---
 
-## 8. Development Methodology & Process Model
+## 6. Deep-Dive Feature Specifications
 
-CloudForge follows an iterative, systematic engineering methodology:
+### 6.1 Browser-Based Multi-Tab IDE & Monaco Editor
+- Powered by `@monaco-editor/react`, supporting over 50 programming languages.
+- Full multi-tab bar with dirty-state indicators (unsaved circles), close actions, and active tab switching.
+- Keyboard shortcuts: `Ctrl+S` (Save file), `Ctrl+F` (Find), `Ctrl+H` (Find & Replace), `Ctrl+P` (Quick file navigation).
+- Rich custom viewers:
+  - **Markdown Viewer:** Interactive preview with GitHub-style callouts (`[!NOTE]`, `[!TIP]`, `[!IMPORTANT]`) and copyable code blocks.
+  - **LaTeX Viewer:** Mathematical formulas rendered via KaTeX with live equation formatting.
+  - **IPYNB Viewer:** Interactive Jupyter Notebook layout showing cells, markdown explanations, and execution outputs.
 
-```mermaid
-flowchart LR
-  Step1["1. Requirement Analysis"] --> Step2["2. System Architecture Design"]
-  Step2 --> Step3["3. Workspace Provisioning Engine"]
-  Step3 --> Step4["4. File Hierarchy & Editor System"]
-  Step4 --> Step5["5. Git Engine & Staging Area"]
-  Step5 --> Step6["6. Diff Viewer & Commit Timeline"]
-  Step6 --> Step7["7. GitHub API Synchronization"]
-  Step7 --> Step8["8. Template Presets & Export"]
-  Step8 --> Step9["9. Verification & Performance Tuning"]
-```
+### 6.2 Real-Time Collaboration & CRDT Document Sync
+- **Protocol:** Operates over a dedicated WebSocket gateway at `ws://localhost:5000/ws/collaboration`.
+- **CRDT Engine:** Integrates `Yjs` for conflict-free mathematical convergence across multiple concurrent typists.
+- **State Vector Handshake:** When a user opens a file, the client transmits `document_sync_step_1` containing its local state vector. The server replies with `document_sync_step_2` containing the missing binary updates.
+- **Incremental Binary Updates:** Subsequent edits transmit compact delta frames (`document_update`), slashing bandwidth consumption compared to sending full document text.
+- **Debounced Storage Flush:** In-memory CRDT mutations are automatically saved to MongoDB every 8 seconds, or immediately upon user departure.
+- **Presence & Remote Cursors:** Transmits cursor positions (`line`, `column`) and selections, rendering colored remote user cursors and name flags in real time.
+- **Activity Feed:** Broadcasts throttled, user-friendly activity events (`"Alice edited main.py"`, `"Bob committed changes"`).
 
-| Step | Phase | Key Implementation Details |
-| :---: | :--- | :--- |
-| **1** | **Requirement Analysis** | Analyzed developer requirements for browser-based coding, workspace file persistence, visual Git workflows, and cloud portability. |
-| **2** | **System Architecture Design** | Architected decoupled client-server architecture with stateless Express REST endpoints and MongoDB Mongoose schemas. |
-| **3** | **Workspace Provisioning Engine** | Implemented isolated workspace initialization, container management, and project lifecycle controls. |
-| **4** | **File Hierarchy & Editor System** | Built expandable/collapsible file tree, syntax icons, in-place file/folder renaming, recursive deletion, multi-file uploads, and multi-tab editor. |
-| **5** | **Git Engine & Staging Area** | Developed working tree dirty-state tracking, staged vs unstaged separation, commit creation, and branch management. |
-| **6** | **Diff Viewer & Commit Timeline** | Engineered side-by-side (split) and unified diff views with addition/deletion line highlighting and interactive commit inspection. |
-| **7** | **GitHub API Synchronization** | Implemented bidirectional GitHub REST API integration for repository linking, publishing, recursive tree pulling, and remote committing. |
-| **8** | **Template Presets & Export** | Built modular starter templates (React, Node.js, Python, HTML/CSS, Blank) with re-seeding and client-side ZIP archive export via JSZip. |
-| **9** | **Verification & Performance Tuning** | Conducted strict TypeScript validation (`tsc -b`), production bundling (`vite build`), and backend syntax verification. |
+### 6.3 Container Sandboxing & Execution Isolation
+- Built upon `dockerode`, providing isolated Linux container environments for each project.
+- **Resource Quotas:** Standard defaults enforce `1536 MB RAM` and `1.5 CPU Cores` per workspace to prevent resource exhaustion.
+- **Zero-Config Host Sandbox Fallback:** If Docker is not running or unavailable on the host system, CloudForge automatically falls back to an isolated workspace sandbox under `/Backend/storage/<projectId>/workspace/`.
+- Terminal navigation within the sandbox is strictly jailed to `/workspace` using custom shell initialization flags, preventing traversal into the host's root operating system.
 
----
+### 6.4 Jailed Cloud Terminal & WebSocket PTY Gateway
+- Terminal emulator powered by `@xterm/xterm` with the `@xterm/addon-fit` and `@xterm/addon-web-links` plugins.
+- Connects to `ws://localhost:5000/ws/terminal?projectId=<id>&token=<jwt>`.
+- Supports bidirectional interactive input/output, ANSI color codes, text selection, and command execution (e.g., `npm install`, `python app.py`, `git status`).
+- **Disk-to-DB Real-Time Synchronization:** A file watcher automatically detects files created, modified, or deleted inside the terminal shell and synchronizes them to MongoDB and the frontend File Explorer in real time.
 
-## 9. Implementation Roadmap
+### 6.5 Visual Git Engine, Diff Viewer & Commit Graph
+- **Working Tree Tracking:** Distinguishes between Staged and Unstaged changes with modification badges: `A` (Added), `M` (Modified), and `D` (Deleted).
+- **Staging Controls:** One-click Stage All, Unstage All, or per-file staging and change discarding.
+- **Interactive Commit Diff Viewer:**
+  - **Side-by-Side (Split) Mode:** Displays original and revised code in adjacent panes with aligned line numbering.
+  - **Unified Mode:** Standard line-by-line diff with inline green additions and red deletions.
+- **Commit History Graph:** Chronological DAG timeline displaying commit messages, author names, relative timestamps, and short SHA hashes.
+- **Branch Management:** Switch between active branches (`main`, `dev`, `feature`) or create new branches on the fly.
+- **GitHub Integration:** Link an existing GitHub repository URL, publish a new public/private repository, and synchronize commits bidirectionally using personal access tokens.
 
-| Phase | Module | Description |
-| :--- | :--- | :--- |
-| **Phase 1** | **React + Node.js + MongoDB** | Set up the frontend, backend APIs, authentication, database schemas, and foundational application architecture. |
-| **Phase 2** | **Project Management** | Implement project creation, workspace management, user sessions, permissions, and project settings. |
-| **Phase 3** | **Docker Workspace** | Create isolated Docker-based development environments for each project. |
-| **Phase 4** | **Cloud Terminal** | Provide an interactive terminal connected to the user's isolated workspace. |
-| **Phase 5** | **Browser IDE** | Build a web-based code editor with file explorer, multi-tab editing, line numbers gutter, and workspace integration. |
-| **Phase 6** | **Git Integration** | Add Git repository operations, working tree diffing, commit history graph, branch switcher, and GitHub sync. |
-| **Phase 7** | **WebSocket Collaboration** | Enable real-time communication and collaborative workspace synchronization using WebSockets. |
-| **Phase 8** | **Resource Monitoring** | Monitor CPU, memory, storage, container health, and workspace resource usage. |
-| **Phase 9** | **Redis + Message Queue** | Introduce Redis for caching, session management, coordination, and message queues for asynchronous workloads. |
-| **Phase 10** | **Persistent / Object Storage** | Add persistent storage for project files, build artifacts, logs, and workspace archives. |
-| **Phase 11** | **Kubernetes** | Migrate workspace orchestration from standalone Docker containers to Kubernetes-managed workloads. |
-| **Phase 12** | **Auto Scaling + Load Balancing** | Implement automatic resource scaling and load balancing to support concurrent developer workloads. |
-| **Phase 13** | **Monitoring + CI/CD** | Integrate centralized monitoring, logging, metrics, automated testing, and CI/CD pipelines for production deployment. |
+### 6.6 Live Web Application Preview & Reverse Proxy
+- Automatically scans and detects active HTTP listening ports within the workspace container (e.g., 3000, 5000, 5173, 8080).
+- Provides an integrated reverse proxy router at `/api/projects/:id/preview/:port/*`.
+- Embeds a resizable split-screen iframe or separate preview tab featuring an address bar, reload button, external window launcher, and viewport mode toggles (Desktop, Tablet, Mobile).
 
----
+### 6.7 Interactive Multi-Language Execution & Jupyter Notebooks
+- Multi-language runtime detection automatically identifies project types (Node.js, Python, C++, Go, Rust, Java, Web).
+- Interactive code execution endpoint (`/api/projects/:id/execution/run`) evaluates code snippets and streams back stdout, stderr, and execution duration.
+- Stateful Jupyter kernel controller (`/api/projects/:id/kernel/execute`) manages in-memory variable scopes across consecutive notebook cell executions.
 
-## 10. Technical Specifications & REST API Reference
-
-### Workspace & File Operations
-| Method | Endpoint | Description |
-| :--- | :--- | :--- |
-| `GET` | `/api/projects/:id/workspace` | Unified fetch for project metadata, files, commits, and branches in a single query. |
-| `GET` | `/api/projects/:id/files` | Fetch flat list of workspace file and directory documents. |
-| `POST` | `/api/projects/:id/files` | Create a new file or directory in the workspace. |
-| `PUT` | `/api/projects/:id/files/:fileId` | Update file content, name, or path. |
-| `PUT` | `/api/projects/:id/files/:fileId/rename` | Rename file or folder (recursively updates paths of all child items). |
-| `DELETE` | `/api/projects/:id/files/:fileId` | Delete file or directory (recursively deletes all child items). |
-| `POST` | `/api/projects/:id/workspace/reset-template` | Re-seed workspace files from a selected starter template. |
-
-### Git & Source Control Operations
-| Method | Endpoint | Description |
-| :--- | :--- | :--- |
-| `GET` | `/api/projects/:id/git/commits` | Get commit history timeline for the active branch. |
-| `GET` | `/api/projects/:id/git/commits/:sha` | Get single commit details, file changes, and diff patches. |
-| `POST` | `/api/projects/:id/git/commit` | Create a new commit locally and/or push to remote GitHub repository. |
-| `POST` | `/api/projects/:id/git/branches` | Switch active branch or create a new branch. |
-| `POST` | `/api/projects/:id/git/link-github` | Link local project to an existing GitHub repository URL. |
-| `POST` | `/api/projects/:id/git/publish-github` | Create a new GitHub repository and push all local workspace files. |
-| `POST` | `/api/projects/:id/git/sync` | Synchronize workspace with the remote GitHub repository tree. |
+### 6.8 Starter Template Presets & Client-Side ZIP Packaging
+- Pre-configured starter templates ready for instant seeding:
+  1. **React + TypeScript (Vite):** Full modern single-page application setup.
+  2. **Node.js + Express:** REST API starter with JSON middleware and test endpoints.
+  3. **Python Application:** Modular Python script setup with environment templates.
+  4. **Go Web Server:** Lightweight Go HTTP server setup.
+  5. **Rust CLI / App:** Standard `Cargo.toml` and `main.rs` scaffolding.
+  6. **C++ Project:** Modern C++ application with Makefile and build scripts.
+  7. **Java Application:** Standard Java project structure.
+  8. **Static Web:** HTML5, CSS3, and modern JavaScript starter.
+  9. **Blank Project:** Clean slate for custom architectures.
+- **Instant Client-Side ZIP Packaging:** Generates a structured ZIP file of the entire workspace directly inside the browser using `JSZip`, allowing instant offline download.
 
 ---
 
-## 11. Directory Layout
+## 7. Repository Layout & Directory Tree
 
 ```text
 CloudForge/
 ├── Backend/
 │   ├── src/
-│   │   ├── config/             # Database and GitHub OAuth configurations
+│   │   ├── config/
+│   │   │   └── db.js                        # Dual-mode Mongoose & MongoMemoryServer manager
 │   │   ├── controllers/
-│   │   │   ├── authController.js
-│   │   │   ├── projectController.js
-│   │   │   ├── workspaceController.js   # File CRUD, Git commits, GitHub sync, Template re-seed
-│   │   │   └── githubController.js
-│   │   ├── middleware/         # Auth verification middleware
+│   │   │   ├── authController.js            # User registration, login, JWT issuance
+│   │   │   ├── containerController.js       # Container lifecycle & metrics inspection
+│   │   │   ├── deployController.js          # Deployment & export management
+│   │   │   ├── executionController.js       # Code execution runner endpoints
+│   │   │   ├── githubController.js          # GitHub OAuth & repository synchronization
+│   │   │   ├── kernelController.js         # Interactive Jupyter notebook cell execution
+│   │   │   ├── previewController.js         # Port discovery & reverse proxy streaming
+│   │   │   ├── projectController.js         # Project CRUD & listing
+│   │   │   └── workspaceController.js       # File tree CRUD, Git commits, Template re-seed
+│   │   ├── middleware/
+│   │   │   └── auth.js                      # JWT authentication verification middleware
 │   │   ├── models/
-│   │   │   ├── User.js
-│   │   │   ├── Project.js               # Clean project schema (name, description, template, gitRemote)
-│   │   │   ├── ProjectFile.js           # Multi-file tree schema
-│   │   │   ├── ProjectCommit.js         # Git commit history & diff patch schema
-│   │   │   └── GitHubConnection.js
-│   │   ├── routes/             # Express API routes
-│   │   ├── services/           # GitHub REST API & starter template engine
-│   │   └── server.js           # Express application entry
-│   └── package.json
+│   │   │   ├── GitHubConnection.js          # OAuth tokens & linked remote repos
+│   │   │   ├── Project.js                   # Project metadata & collaborator roles
+│   │   │   ├── ProjectCommit.js             # Commit history & unified diff patches
+│   │   │   ├── ProjectFile.js               # Hierarchical file tree nodes & content
+│   │   │   └── User.js                      # User credentials & hashed passwords
+│   │   ├── routes/                          # Express REST API routes
+│   │   ├── services/
+│   │   │   ├── cloudRunnerService.js        # Multi-language code execution engine
+│   │   │   ├── collaborationGateway.js      # WebSocket gateway (/ws/collaboration)
+│   │   │   ├── collaborationService.js      # In-memory Yjs CRDT document cache
+│   │   │   ├── containerService.js          # Dockerode isolation & local jail sandbox
+│   │   │   ├── portDetectorService.js       # Dynamic container port detection
+│   │   │   ├── presenceService.js           # Multi-user presence & cursor tracking
+│   │   │   ├── previewProxyService.js       # Live preview HTTP reverse proxy
+│   │   │   ├── runtimeRegistry.js           # Language runtime detection & definitions
+│   │   │   ├── terminalGateway.js           # WebSocket gateway (/ws/terminal)
+│   │   │   └── vcsService.js                # Git staging, diffing, and DAG logic
+│   │   ├── app.js                           # Express application configuration
+│   │   └── server.js                        # HTTP & WebSocket server entry point
+│   ├── storage/                             # Local workspace storage fallback
+│   ├── package.json                         # Backend dependencies & scripts
+│   └── .env.example                         # Environment configuration template
 │
 ├── Frontend/
 │   ├── src/
-│   │   ├── collaboration/      # Real-Time Collaboration Architecture
-│   │   │   ├── types.ts                # Collaboration protocol & state types
-│   │   │   ├── collaborationClient.ts  # Resilient WebSocket client & reconnect logic
-│   │   │   ├── documentSync.ts         # Yjs CRDT + Monaco editor synchronization binding
-│   │   │   └── CollaborationProvider.tsx # Real-time React context & event dispatcher
+│   │   ├── collaboration/
+│   │   │   ├── CollaborationProvider.tsx    # React collaboration context & event handler
+│   │   │   ├── collaborationClient.ts       # Resilient WebSocket connector with reconnect
+│   │   │   ├── documentSync.ts              # Yjs CRDT binding for Monaco Editor
+│   │   │   └── types.ts                     # Collaboration message definitions
 │   │   ├── components/
-│   │   │   ├── layout/         # Navbar and global layouts
-│   │   │   ├── projects/       # Project cards, creation modal, and repository picker
-│   │   │   ├── ui/             # LoadingSpinner, EmptyState
-│   │   │   └── workspace/      # VS Code-grade Workspace Components
-│   │   │       ├── ActivityBar.tsx         # Activity bar with Collaboration icon & badge
-│   │   │       ├── BottomPanel.tsx
-│   │   │       ├── CodeEditor.tsx          # Monaco Editor with live remote cursors
-│   │   │       ├── CollaborationPanel.tsx  # Collaborators list and real-time activity feed
-│   │   │       ├── CollaboratorsModal.tsx  # Collaborator invitation & role management
-│   │   │       ├── CommitDetailsModal.tsx
-│   │   │       ├── DiffViewer.tsx
-│   │   │       ├── FileExplorer.tsx
-│   │   │       ├── FileIcon.tsx
-│   │   │       ├── GitHubRemoteModal.tsx
-│   │   │       ├── ProjectSettingsPanel.tsx
-│   │   │       ├── SearchPanel.tsx
-│   │   │       ├── SourceControlPanel.tsx
-│   │   │       ├── StatusBar.tsx
-│   │   │       └── WorkspaceNavbar.tsx     # Collaborators avatar stack & status badge
+│   │   │   ├── layout/                      # Navbar, Footer, and Page shells
+│   │   │   ├── projects/                    # Project cards, creation modal, template selector
+│   │   │   ├── ui/                          # Button, Modal, Dropdown, Spinner primitives
+│   │   │   └── workspace/
+│   │   │       ├── ActivityBar.tsx          # Left activity dock with tool icons
+│   │   │       ├── BottomPanel.tsx          # Terminal drawer & container specs panel
+│   │   │       ├── CodeEditor.tsx           # Multi-tab Monaco editor with remote cursors
+│   │   │       ├── CollaborationPanel.tsx   # Live collaborators list & activity feed
+│   │   │       ├── CommitDetailsModal.tsx   # Commit metadata & patch viewer
+│   │   │       ├── DiffViewer.tsx           # Side-by-side & unified diff viewer
+│   │   │       ├── FileExplorer.tsx         # Hierarchical file tree with context menus
+│   │   │       ├── GitHubRemoteModal.tsx    # Remote repository linking & publishing
+│   │   │       ├── PreviewPanel.tsx         # Live web app preview with port switcher
+│   │   │       ├── SourceControlPanel.tsx   # Git staging, commit authoring, and DAG graph
+│   │   │       ├── StatusBar.tsx            # Bottom status bar with branch & sync status
+│   │   │       └── WorkspaceNavbar.tsx      # Project title, avatars, and action controls
 │   │   ├── pages/
-│   │   │   ├── Dashboard.tsx
-│   │   │   ├── Project.tsx     # Projects list overview
-│   │   │   └── ProjectView.tsx # Main IDE Workspace wrapped in CollaborationProvider
-│   │   ├── types/              # TypeScript definitions (project.ts, workspace.ts)
-│   │   └── main.tsx
-│   └── package.json
+│   │   │   ├── Dashboard.tsx                # User workspace dashboard
+│   │   │   ├── Login.tsx                    # User authentication login page
+│   │   │   ├── Register.tsx                 # New developer registration page
+│   │   │   ├── Project.tsx                  # Project management overview
+│   │   │   └── ProjectView.tsx              # Full-screen IDE workspace
+│   │   ├── services/                        # API clients (project, file, git, preview)
+│   │   ├── types/                           # TypeScript interfaces and type definitions
+│   │   ├── App.tsx                          # React Router routes
+│   │   └── main.tsx                         # Client application entry point
+│   ├── package.json                         # Frontend dependencies & scripts
+│   ├── vite.config.ts                       # Vite bundler configuration
+│   └── tsconfig.json                        # TypeScript configuration
 │
-└── README.md
+├── Research Papers/                         # 10 peer-reviewed research papers (RP_1 to RP_10)
+├── CloudForge_IEEE_Report.tex               # IEEE-formatted conference & journal paper (.tex)
+├── PROJECT_REPORT.md                        # Local execution & verification log
+├── future.md                                # Enterprise roadmap & cloud architecture
+└── README.md                                # Comprehensive project documentation
 ```
 
 ---
 
-## 12. Real-Time Collaboration System
+## 8. Comprehensive REST API Reference
 
-CloudForge integrates an enterprise-grade real-time collaboration engine that enables multiple authenticated developers to concurrently code, review, and navigate the same cloud workspace.
+### 8.1 Authentication Endpoints (`/api/auth`)
+| Method | Endpoint | Description | Request Payload | Response |
+| :--- | :--- | :--- | :--- | :--- |
+| `POST` | `/api/auth/register` | Register new developer account | `{ name, email, password }` | `{ message, user: { id, name, email }, token }` |
+| `POST` | `/api/auth/login` | Authenticate and obtain JWT token | `{ email, password }` | `{ message, user: { id, name, email }, token }` |
+| `GET` | `/api/auth/me` | Fetch authenticated user profile | *Header: `Authorization: Bearer <token>`* | `{ user: { id, name, email } }` |
 
-```
-+-----------------------------------------------------------------------------------------+
-|                        CLOUDFORGE COLLABORATION ARCHITECTURE                           |
-+-----------------------------------------------------------------------------------------+
-|                                                                                         |
-|   Client A (Alice)                           Client B (Bob)                             |
-|   +--------------------------+               +--------------------------+               |
-|   | Monaco Editor + Yjs Doc  |               | Monaco Editor + Yjs Doc  |               |
-|   | CollaborationClient      |               | CollaborationClient      |               |
-|   +------------+-------------+               +------------+-------------+               |
-|                |                                          |                             |
-|                |  /ws/collaboration (JWT Authenticated)   |                             |
-|                +-------------------+  +-------------------+                             |
-|                                    |  |                                                 |
-|                                    v  v                                                 |
-|                   +------------------------------------+                                |
-|                   |        CollaborationGateway        |                                |
-|                   |  - JWT Authentication              |                                |
-|                   |  - Project Membership Guard (1008) |                                |
-|                   |  - Event Router                    |                                |
-|                   +-----------------+------------------+                                |
-|                                     |                                                   |
-|                +--------------------+--------------------+                              |
-|                v                                         v                              |
-|   +--------------------------+              +--------------------------+                |
-|   |     PresenceService      |              |   CollaborationService   |                |
-|   |  - Room memberships      |              |  - In-memory Y.Doc cache |                |
-|   |  - Cursor & selections   |              |  - CRDT Sync Steps 1 & 2 |                |
-|   |  - Dynamic user colors   |              |  - Incremental diff sync |                |
-|   +--------------------------+              |  - Debounced auto-save   |                |
-|                                             +------------+-------------+                |
-|                                                          |                              |
-|                                                          v (Every 8s / on-exit)         |
-|                                             +--------------------------+                |
-|                                             |    MongoDB Collections   |                |
-|                                             |  - ProjectFile (content) |                |
-|                                             |  - Project (collabs)     |                |
-|                                             +--------------------------+                |
-+-----------------------------------------------------------------------------------------+
-```
+### 8.2 Projects & Workspace Endpoints (`/api/projects`)
+| Method | Endpoint | Description | Request Payload | Response |
+| :--- | :--- | :--- | :--- | :--- |
+| `GET` | `/api/projects` | List all projects belonging to user | None | `[ { id, name, template, gitRemote, updatedAt } ]` |
+| `POST` | `/api/projects` | Create a new project with template | `{ name, description, template }` | `{ project: { id, name, template } }` |
+| `GET` | `/api/projects/:id` | Fetch project details & metadata | None | `{ id, name, description, template, gitRemote }` |
+| `GET` | `/api/projects/:id/workspace` | Unified fetch of files, commits, branches | None | `{ project, files: [], commits: [], branches: [] }` |
+| `DELETE` | `/api/projects/:id` | Permanently delete project workspace | None | `{ message: "Project deleted successfully" }` |
 
-### Key Technical Capabilities:
-1. **Dedicated WebSocket Gateway (`/ws/collaboration`)**:
-   - Strictly isolated from `/ws/terminal` to preserve dedicated cloud shell pty streams without multiplexing interference.
-   - Requires valid JWT authorization via bearer token or cookie query parameters.
-   - Enforces workspace security: unauthorized attempts to join non-member project rooms are rejected immediately with WebSocket close code `1008`.
+### 8.3 File Operations (`/api/projects/:id/files`)
+| Method | Endpoint | Description | Request Payload |
+| :--- | :--- | :--- | :--- |
+| `GET` | `/api/projects/:id/files` | Get flat list of workspace files | None |
+| `POST` | `/api/projects/:id/files` | Create a new file or directory | `{ name, path, isDirectory, content? }` |
+| `PUT` | `/api/projects/:id/files/:fileId` | Update file content | `{ content: "..." }` |
+| `PUT` | `/api/projects/:id/files/:fileId/rename` | Rename file or folder (recursive child update) | `{ newName: "index.ts" }` |
+| `DELETE` | `/api/projects/:id/files/:fileId` | Delete file or directory (recursive delete) | None |
+| `POST` | `/api/projects/:id/workspace/reset-template` | Re-seed project files from starter preset | `{ template: "react" }` |
 
-2. **CRDT-Powered Concurrent Document Sync (Yjs + Monaco)**:
-   - Conflict-Free Replicated Data Types (CRDTs) guarantee mathematical convergence across concurrent, out-of-order, or delayed keystrokes.
-   - Clients exchange compact base64 binary update frames (`document_update`) instead of whole documents, slashing network bandwidth.
-   - State Vector handshakes (`document_sync_step_1` & `document_sync_step_2`) allow newly joining clients or reconnected peers to synchronize instantly.
+### 8.4 Git & Source Control Operations (`/api/projects/:id/git`)
+| Method | Endpoint | Description | Request Payload |
+| :--- | :--- | :--- | :--- |
+| `GET` | `/api/projects/:id/git/commits` | Get commit timeline for active branch | None |
+| `GET` | `/api/projects/:id/git/commits/:sha` | Get commit details and diff patch | None |
+| `POST` | `/api/projects/:id/git/commit` | Create a commit and record diff patch | `{ message, files: [ { path, content } ] }` |
+| `POST` | `/api/projects/:id/git/branches` | Switch active branch or create branch | `{ branchName, createNew? }` |
+| `POST` | `/api/projects/:id/git/link-github` | Link project to existing GitHub repository | `{ repoUrl, accessToken }` |
+| `POST` | `/api/projects/:id/git/publish-github` | Create new GitHub repository and push files | `{ repoName, isPrivate, accessToken }` |
+| `POST` | `/api/projects/:id/git/sync` | Pull latest commits and tree from GitHub | `{ accessToken }` |
 
-3. **In-Memory Buffer & High-Efficiency Persistence**:
-   - Zero per-keystroke database writes. All edits mutate in-memory CRDT structures with sub-millisecond local response times.
-   - Persistence occurs automatically via a debounced 8-second flusher or when the last peer disconnects from a document.
+### 8.5 Live Preview & Port Proxy Endpoints (`/api/projects/:id/preview`)
+| Method | Endpoint | Description |
+| :--- | :--- | :--- |
+| `GET` | `/api/projects/:id/preview/info` | Detect active listening ports and status in workspace |
+| `ALL` | `/api/projects/:id/preview/:port/*` | Reverse proxy HTTP/HTTPS traffic to in-workspace port |
+| `POST` | `/api/projects/:id/preview/start` | Launch preview dev server daemon inside container |
+| `POST` | `/api/projects/:id/preview/stop` | Terminate running preview process |
 
-4. **Live Presence & Remote Cursors**:
-   - Real-time cursor coordinates (`line`, `col`) and multi-line selection ranges are transmitted with assigned user colors.
-   - Workspace Navbar includes live collaborator avatar stacks, active counts, and a dedicated Collaboration sidebar tab.
-
-5. **File Operations & Git Synchronization**:
-   - File creation, rename, and deletion events propagate across all active collaborator workspaces in real time.
-   - Git commits, branch switching, and remote sync events update collaborator timelines without requiring page refreshes.
+### 8.6 Code Execution & Interactive Kernel Endpoints
+| Method | Endpoint | Description | Request Payload |
+| :--- | :--- | :--- | :--- |
+| `POST` | `/api/projects/:id/execution/run` | Execute code file in isolated sandbox | `{ language, code, stdin? }` |
+| `POST` | `/api/projects/:id/kernel/execute` | Execute stateful Jupyter notebook cell | `{ cellId, code, language }` |
+| `POST` | `/api/projects/:id/kernel/restart` | Reset in-memory kernel variable state | None |
 
 ---
 
-## 13. Installation & Setup Guide
+## 9. WebSocket Protocol Specifications
 
-### Prerequisites
-* **Node.js**: v18.0.0 or higher
-* **npm** or **yarn**
-* **MongoDB**: Local MongoDB instance or MongoDB Atlas cluster connection
+CloudForge uses two dedicated WebSocket gateways to prevent multiplexing collisions:
 
-### 1. Backend Setup
+### 9.1 Terminal Gateway (`/ws/terminal`)
+- **Connection URI:** `ws://localhost:5000/ws/terminal?projectId=<id>&token=<jwt>`
+- **Frame Types:**
+  - `stdin` (Client -> Server): `{ type: "stdin", data: "npm run dev\r" }`
+  - `resize` (Client -> Server): `{ type: "resize", cols: 120, rows: 32 }`
+  - `stdout` (Server -> Client): Raw UTF-8 string containing ANSI escape sequences.
+  - `exit` (Server -> Client): `{ type: "exit", exitCode: 0 }`
+
+### 9.2 Collaboration Gateway (`/ws/collaboration`)
+- **Connection URI:** `ws://localhost:5000/ws/collaboration?projectId=<id>&token=<jwt>`
+- **Protocol Frames:**
+  ```json
+  // Handshake Step 1 (Client -> Server)
+  { "type": "document_sync_step_1", "fileId": "60a...", "stateVector": "<base64>" }
+
+  // Handshake Step 2 (Server -> Client)
+  { "type": "document_sync_step_2", "fileId": "60a...", "update": "<base64>" }
+
+  // Incremental Edit Delta (Bidirectional)
+  { "type": "document_update", "fileId": "60a...", "update": "<base64>" }
+
+  // Cursor & Selection Presence (Bidirectional)
+  { "type": "presence_cursor", "fileId": "60a...", "cursor": { "line": 12, "col": 4 }, "selection": null }
+
+  // Activity Notification (Server -> Client)
+  { "type": "activity_event", "id": "act_1720000000_abc", "user": "Alice", "action": "edited", "target": "main.py" }
+  ```
+- **Security Guard:** If an unauthenticated user or non-member attempts to connect to a project room, the connection is instantly rejected with WebSocket close code `1008` (Policy Violation).
+
+---
+
+## 10. Localhost Installation & Quickstart Guide
+
+### 10.1 Prerequisites
+- **Node.js**: v18.0.0 or higher (v20+ or v24+ fully supported)
+- **npm** (v9+) or **yarn** / **pnpm**
+- **Git** installed on the local system
+- *(Optional)* **Docker Desktop** (if absent, CloudForge automatically activates its zero-config local workspace sandbox)
+- *(Optional)* **MongoDB** (if absent, CloudForge automatically downloads and boots an in-memory MongoDB server)
+
+### 10.2 Backend Setup (Zero-Config DB)
 ```bash
+# 1. Navigate to the Backend directory
 cd Backend
+
+# 2. Install dependencies
 npm install
+
+# 3. Create your local environment file
+cp .env.example .env
 ```
 
-Create a `.env` file in the `Backend/` directory:
+Ensure your `Backend/.env` contains the default values:
 ```env
 PORT=5000
-MONGODB_URI=mongodb://localhost:27017/cloudforge
-JWT_SECRET=your_jwt_secret_key_here
 CLIENT_URL=http://localhost:5173
-GITHUB_CLIENT_ID=your_github_oauth_client_id
-GITHUB_CLIENT_SECRET=your_github_oauth_client_secret
-GITHUB_CALLBACK_URL=http://localhost:5000/api/github/callback
+JWT_SECRET=cloudforge_local_dev_secret_key_12345
+NODE_ENV=development
 ```
+*(Leave `MONGODB_URI` commented out or empty to use the zero-config automatic in-memory MongoDB database.)*
 
-Start the backend server:
 ```bash
+# 4. Start the backend development server
 npm run dev
 ```
+The backend API server will boot on `http://localhost:5000/` and start both WebSocket endpoints (`/ws/terminal` and `/ws/collaboration`).
 
-### 2. Frontend Setup
+### 10.3 Frontend Setup
+In a new terminal window:
 ```bash
-cd ../Frontend
+# 1. Navigate to the Frontend directory
+cd Frontend
+
+# 2. Install dependencies
 npm install
+
+# 3. Create frontend environment configuration
+cp .env.example .env
 ```
 
-Start the Vite development server:
+Ensure your `Frontend/.env` has:
+```env
+VITE_API_URL=http://localhost:5000
+```
+
 ```bash
+# 4. Start the Vite development server
 npm run dev
 ```
 
-Navigate to `http://localhost:5173` in your browser.
+Open your browser and navigate to **`http://localhost:5173`**.
 
-### 3. Automated Collaboration Verification Suite
-To run the automated end-to-end multi-user test suite verifying two-user simultaneous editing, CRDT convergence, presence, file system events, Git broadcasts, security guards, and terminal independence:
+---
+
+## 11. Environment Variables Reference
+
+### Backend (`Backend/.env`)
+| Variable | Default Value | Description |
+| :--- | :--- | :--- |
+| `PORT` | `5000` | HTTP and WebSocket port for Express server |
+| `CLIENT_URL` | `http://localhost:5173` | Allowed CORS origin for frontend requests |
+| `JWT_SECRET` | *(Required string)* | Secret key used for signing and verifying JWT tokens |
+| `NODE_ENV` | `development` | Node runtime environment (`development` or `production`) |
+| `MONGODB_URI` | *Optional* | MongoDB connection URI (Atlas or local). If omitted, boots `MongoMemoryServer` |
+| `GITHUB_CLIENT_ID`| *Optional* | GitHub OAuth Client ID for repository operations |
+| `GITHUB_CLIENT_SECRET`| *Optional*| GitHub OAuth Client Secret |
+| `GITHUB_CALLBACK_URL` | `http://localhost:5000/api/github/callback` | OAuth redirect URI |
+
+### Frontend (`Frontend/.env`)
+| Variable | Default Value | Description |
+| :--- | :--- | :--- |
+| `VITE_API_URL` | `http://localhost:5000` | Base URL for Backend REST API and WebSockets |
+
+---
+
+## 12. Automated Verification & Test Suites
+
+CloudForge includes comprehensive verification scripts to ensure complete system health:
+
+### 12.1 Frontend Build & Type Check
+Verify that all TypeScript types, React components, and Vite bundle configurations compile with zero errors:
+```bash
+cd Frontend
+npm run build
+```
+*Expected Result: All 4,200+ modules transform and compile into `dist/` with 0 compiler errors.*
+
+### 12.2 Multi-User Collaboration End-to-End Test Suite
+Tests real-time CRDT synchronization, concurrent edits, presence tracking, file system events, Git broadcasts, security guards, and terminal independence:
 ```bash
 cd Backend
 node scripts/test-collaboration-e2e.js
 ```
 
+### 12.3 API Health Verification
+```bash
+# Health Check Endpoint
+curl http://localhost:5000/health
+# Response: { "status": "healthy", "environment": "development" }
+
+# Service Info Endpoint
+curl http://localhost:5000/
+# Response: Service metadata with active capabilities
+```
+
 ---
 
-## 14. License
+## 13. Security Architecture & Threat Mitigation
 
-This project is licensed under the MIT License.
+1. **Jailed Workspace Environment:**
+   - Terminal sessions are strictly jailed to `/workspace` using isolated shell flags.
+   - Prevents unauthorized navigation into system root or parent directories on the host operating system.
+2. **Path Traversal Sanitization:**
+   - All file operations pass through strict path canonicalization algorithms (`path.resolve` with root prefix validation) to neutralize directory traversal exploits (`../../etc/passwd`).
+3. **Multi-Tenant Collaboration Authorization:**
+   - The `/ws/collaboration` gateway intercepts all upgrade requests and validates JWT tokens against the requested `projectId`.
+   - Unauthorized attempts result in immediate connection closure with WebSocket code `1008`.
+4. **Credential Hashing & Protection:**
+   - Passwords are salted and hashed using `bcryptjs` with standard 10 salt rounds.
+   - Remote GitHub Personal Access Tokens and OAuth credentials are never stored in cleartext.
+5. **CORS & CSRF Protection:**
+   - Strict CORS policies restrict HTTP requests and WebSocket connections to designated `CLIENT_URL` origins.
+
+---
+
+## 14. Future Cloud-Native Scalability Roadmap
+
+As detailed in [`future.md`](./future.md), CloudForge provides an architectural blueprint for enterprise hyperscaling:
+
+- **Phase 4: Kubernetes Custom Operator (`cloudforge-operator`):** Dynamic provisioning of Custom Resource Definitions (`WorkspacePod`, `WorkspaceVolume`) across multi-node clusters.
+- **Phase 5: Distributed Storage & Snapshots:** Shared Ceph / AWS EBS dynamic persistent volume claims with sub-second volume snapshotting.
+- **Phase 7: Cloud CI/CD Pipelines:** In-workspace daemonless container builds via Kaniko and BuildKit.
+- **Phase 8: Enterprise RBAC & Audit Trails:** Granular workspace permissions (`Viewer`, `Editor`, `Admin`) with immutable audit logging.
+
+---
+
+## 15. License & Acknowledgments
+
+This project is open-source software licensed under the **[MIT License](LICENSE)**.
+
+### Academic Research Basis
+CloudForge is developed with theoretical and architectural reference to ten landmark research publications in container orchestration, cloud-based IDEs, and collaborative computing (`RP_1` through `RP_10`), available in the [`Research Papers/`](./Research%20Papers/) directory.

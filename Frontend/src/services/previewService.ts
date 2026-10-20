@@ -39,9 +39,18 @@ class PreviewService {
       credentials: "include",
       body: JSON.stringify({ customCommand, port }),
     });
-    const data = await res.json();
+    const text = await res.text();
+    let data: any = {};
+    try {
+      data = text ? JSON.parse(text) : {};
+    } catch {
+      if (res.status === 429) {
+        throw new Error("Server rate limit / bot challenge encountered (HTTP 429). Please wait a moment.");
+      }
+      throw new Error(`Preview server returned HTTP ${res.status}.`);
+    }
     if (!res.ok) {
-      throw new Error(data.message || "Failed to start development server");
+      throw new Error(data.message || data.error || "Failed to start development server");
     }
     return data;
   }
@@ -56,9 +65,18 @@ class PreviewService {
       credentials: "include",
       body: JSON.stringify({ port }),
     });
-    const data = await res.json();
+    const text = await res.text();
+    let data: any = {};
+    try {
+      data = text ? JSON.parse(text) : {};
+    } catch {
+      if (res.status === 429) {
+        throw new Error("Server rate limit / bot challenge encountered (HTTP 429).");
+      }
+      throw new Error(`Preview server returned HTTP ${res.status}.`);
+    }
     if (!res.ok) {
-      throw new Error(data.message || "Failed to stop development server");
+      throw new Error(data.message || data.error || "Failed to stop development server");
     }
     return data;
   }
