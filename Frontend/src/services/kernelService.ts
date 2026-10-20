@@ -468,9 +468,19 @@ for _name, _val in list(globals().items()):
       body: JSON.stringify({ code }),
     });
 
-    const data = await res.json();
+    const text = await res.text();
+    let data: any = {};
+    try {
+      data = text ? JSON.parse(text) : {};
+    } catch {
+      if (res.status === 429) {
+        throw new Error("Execution rate limit / bot challenge encountered (HTTP 429). Please wait a few seconds and try again.");
+      }
+      throw new Error(`Cloud execution server returned HTTP ${res.status}. Please try again.`);
+    }
+
     if (!res.ok) {
-      throw new Error(data.message || "Failed to execute code in Cloud Container.");
+      throw new Error(data.message || data.error || "Failed to execute code in Cloud Container.");
     }
 
     const duration = Math.round(performance.now() - startTime);

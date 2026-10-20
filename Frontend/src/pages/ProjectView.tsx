@@ -174,7 +174,8 @@ export default function ProjectView() {
 
   useEffect(() => {
     refreshContainerState();
-    const interval = setInterval(refreshContainerState, 10000);
+    // Relaxed polling interval to 25s to avoid Cloudflare bot challenge & rate limiting on Render
+    const interval = setInterval(refreshContainerState, 25000);
     return () => clearInterval(interval);
   }, [refreshContainerState]);
 

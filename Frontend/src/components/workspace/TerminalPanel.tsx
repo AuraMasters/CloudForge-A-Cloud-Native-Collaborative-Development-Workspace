@@ -60,7 +60,8 @@ export const TerminalPanel: React.FC<TerminalPanelProps> = ({
 
   useEffect(() => {
     refreshStatus();
-    const interval = setInterval(refreshStatus, 8000);
+    // Relaxed polling interval to 25s to prevent Cloudflare rate-limiting on Render
+    const interval = setInterval(refreshStatus, 25000);
     return () => clearInterval(interval);
   }, [refreshStatus]);
 
@@ -143,9 +144,17 @@ export const TerminalPanel: React.FC<TerminalPanelProps> = ({
     term.loadAddon(fitAddon);
     term.loadAddon(webLinksAddon);
 
-    term.open(terminalRef.current);
-    fitAddon.fit();
-    term.focus();
+    try {
+      term.open(terminalRef.current);
+      try {
+        fitAddon.fit();
+      } catch {
+        // ignore zero-dimension errors during initial mount
+      }
+      term.focus();
+    } catch (err) {
+      console.warn("Terminal open error:", err);
+    }
 
     termInstanceRef.current = term;
     fitAddonRef.current = fitAddon;
@@ -161,9 +170,19 @@ export const TerminalPanel: React.FC<TerminalPanelProps> = ({
       setTabs((prev) =>
         prev.map((t) => (t.id === activeTabId ? { ...t, status: "connected" } : t))
       );
-      fitAddon.fit();
-      term.focus();
-      ws.send(JSON.stringify({ type: "resize", cols: term.cols, rows: term.rows }));
+      try {
+        fitAddon.fit();
+      } catch {
+        // ignore
+      }
+      try {
+        term.focus();
+      } catch {
+        // ignore
+      }
+      if (ws.readyState === WebSocket.OPEN) {
+        ws.send(JSON.stringify({ type: "resize", cols: term.cols || 80, rows: term.rows || 24 }));
+      }
     };
 
     ws.onmessage = (event) => {
