@@ -43,6 +43,7 @@ interface CollaborationProviderProps {
   onRemoteFileDeleted?: (data: { fileId: string; filePath: string }) => void;
   onRemoteCommitCreated?: (commit: any) => void;
   onRemoteBranchChanged?: (data: { currentBranch: string; branches: string[] }) => void;
+  onRemoteWorkspaceUpdated?: (files: any[]) => void;
 }
 
 export const CollaborationProvider: React.FC<CollaborationProviderProps> = ({
@@ -53,6 +54,7 @@ export const CollaborationProvider: React.FC<CollaborationProviderProps> = ({
   onRemoteFileDeleted,
   onRemoteCommitCreated,
   onRemoteBranchChanged,
+  onRemoteWorkspaceUpdated,
 }) => {
   const { user } = useAuth();
   const [status, setStatus] = useState<ConnectionStatus>("offline");
@@ -232,6 +234,13 @@ export const CollaborationProvider: React.FC<CollaborationProviderProps> = ({
               currentBranch: msg.currentBranch,
               branches: msg.branches,
             });
+          }
+          break;
+        }
+
+        case "workspace_updated": {
+          if (msg.files && Array.isArray(msg.files)) {
+            onRemoteWorkspaceUpdated?.(msg.files);
           }
           break;
         }

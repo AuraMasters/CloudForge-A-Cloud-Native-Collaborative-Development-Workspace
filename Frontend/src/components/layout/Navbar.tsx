@@ -16,7 +16,7 @@ interface NavbarProps {
 function Navbar({ user }: NavbarProps) {
   const navigate = useNavigate();
   const location = useLocation();
-  const { showSuccess, showError } = useAlert();
+  const { showSuccess } = useAlert();
   const { isDark, toggleTheme } = useTheme();
   const [mobileMenuOpen, setMobileMenuOpen] = useState(false);
 
@@ -26,11 +26,12 @@ function Navbar({ user }: NavbarProps) {
         method: "POST",
         credentials: "include",
       });
-
+    } catch (error) {
+      // Continue cleanup even if server is unreachable
+    } finally {
+      localStorage.removeItem("cf_auth_token");
       showSuccess("Successfully signed out");
       navigate("/login");
-    } catch (error) {
-      showError("Failed to sign out. Please try again.");
     }
   };
 

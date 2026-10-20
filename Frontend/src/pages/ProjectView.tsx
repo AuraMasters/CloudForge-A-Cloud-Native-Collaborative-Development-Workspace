@@ -260,11 +260,21 @@ export default function ProjectView() {
     fileId?: string;
   } | null>(null);
 
+  const getAuthHeaders = useCallback((extra: Record<string, string> = {}) => {
+    const token = typeof window !== "undefined" ? localStorage.getItem("cf_auth_token") : "";
+    const headers: Record<string, string> = { ...extra };
+    if (token) {
+      headers["Authorization"] = `Bearer ${token}`;
+    }
+    return headers;
+  }, []);
+
   const loadWorkspace = useCallback(async () => {
     if (!id) return;
     try {
       const res = await fetch(`${API_URL}/api/projects/${id}/workspace`, {
         credentials: "include",
+        headers: getAuthHeaders(),
       });
       const data = await res.json();
       if (!res.ok) {
@@ -281,7 +291,7 @@ export default function ProjectView() {
     } finally {
       setLoading(false);
     }
-  }, [id, showError]);
+  }, [id, showError, getAuthHeaders]);
 
   useEffect(() => {
     loadWorkspace();
@@ -501,7 +511,7 @@ export default function ProjectView() {
         `${API_URL}/api/projects/${id}/files/${fileId}`,
         {
           method: "PUT",
-          headers: { "Content-Type": "application/json" },
+          headers: getAuthHeaders({ "Content-Type": "application/json" }),
           credentials: "include",
           body: JSON.stringify({ content: tab.content }),
         }
@@ -543,7 +553,7 @@ export default function ProjectView() {
     try {
       const res = await fetch(`${API_URL}/api/projects/${id}/files`, {
         method: "POST",
-        headers: { "Content-Type": "application/json" },
+        headers: getAuthHeaders({ "Content-Type": "application/json" }),
         credentials: "include",
         body: JSON.stringify({ name, path, type: "file", content }),
       });
@@ -565,7 +575,7 @@ export default function ProjectView() {
     try {
       const res = await fetch(`${API_URL}/api/projects/${id}/files`, {
         method: "POST",
-        headers: { "Content-Type": "application/json" },
+        headers: getAuthHeaders({ "Content-Type": "application/json" }),
         credentials: "include",
         body: JSON.stringify({ name, path, type: "directory" }),
       });
@@ -588,7 +598,7 @@ export default function ProjectView() {
         `${API_URL}/api/projects/${id}/files/${fileId}/rename`,
         {
           method: "PUT",
-          headers: { "Content-Type": "application/json" },
+          headers: getAuthHeaders({ "Content-Type": "application/json" }),
           credentials: "include",
           body: JSON.stringify({ newName }),
         }
@@ -627,6 +637,7 @@ export default function ProjectView() {
         `${API_URL}/api/projects/${id}/files/${fileId}`,
         {
           method: "DELETE",
+          headers: getAuthHeaders(),
           credentials: "include",
         }
       );
@@ -650,7 +661,7 @@ export default function ProjectView() {
     try {
       const res = await fetch(`${API_URL}/api/projects/${id}/files/batch`, {
         method: "POST",
-        headers: { "Content-Type": "application/json" },
+        headers: getAuthHeaders({ "Content-Type": "application/json" }),
         credentials: "include",
         body: JSON.stringify({ files: uploadedFiles }),
       });
@@ -1031,6 +1042,28 @@ export default function ProjectView() {
     []
   );
 
+  // Live real-time sync when terminal commands (e.g. vite, next, touch, mkdir) modify disk workspace
+  const handleRemoteWorkspaceUpdated = useCallback((newFiles: WorkspaceFile[]) => {
+    setFiles(newFiles);
+    // Automatically sync open editor tabs if files changed on disk and are not dirty
+    setTabs((prevTabs) =>
+      prevTabs.map((tab) => {
+        if (tab.isDirty) return tab;
+        const matching = newFiles.find(
+          (f) => f._id === tab.fileId || (f.path || f.name) === (tab.path || tab.name)
+        );
+        if (matching && matching.content !== undefined && matching.content !== tab.content) {
+          return {
+            ...tab,
+            content: matching.content,
+            initialContent: matching.content,
+          };
+        }
+        return tab;
+      })
+    );
+  }, []);
+
   const isAnyTabDirty = tabs.some((t) => t.isDirty);
   const activeTab = tabs.find((t) => t.fileId === activeTabId);
 
@@ -1054,6 +1087,7 @@ export default function ProjectView() {
       onRemoteFileDeleted={handleRemoteFileDeleted}
       onRemoteCommitCreated={handleRemoteCommitCreated}
       onRemoteBranchChanged={handleRemoteBranchChanged}
+      onRemoteWorkspaceUpdated={handleRemoteWorkspaceUpdated}
     >
       <div className={`h-screen w-screen flex flex-col overflow-hidden font-sans select-none relative transition-colors duration-150 ${
         isDark ? "bg-black text-white" : "bg-white text-black"
@@ -1201,7 +1235,7 @@ export default function ProjectView() {
               )}
 
               {activeActivityTab === "deploy" && (
-                <DeploymentPanel projectName={project?.name} />
+                <DeploymentPanel projectId={project._id} projectName={project?.name} />
               )}
 
               {activeActivityTab === "settings" && (

@@ -12,7 +12,7 @@ import {
   RotateCw,
   Sparkles,
 } from "lucide-react";
-import API_URL from "../../config/api";
+import API_URL, { getAuthHeaders } from "../../config/api";
 import { useAlert } from "../../hooks/useAlert";
 import { useTheme } from "../../context/ThemeContext";
 import type { Project, EnvVariable } from "../../types/project";
@@ -159,7 +159,7 @@ export const EnvVariablesPanel: React.FC<EnvVariablesPanelProps> = ({
 
       const res = await fetch(`${API_URL}/api/projects/${projectId}/env`, {
         method: "PUT",
-        headers: { "Content-Type": "application/json" },
+        headers: getAuthHeaders({ "Content-Type": "application/json" }),
         credentials: "include",
         body: JSON.stringify({ envVariables: varsToSave }),
       });

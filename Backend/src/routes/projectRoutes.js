@@ -48,13 +48,21 @@ import {
 import { protect } from "../middleware/authMiddleware.js";
 import containerRoutes from "./containerRoutes.js";
 import kernelRoutes from "./kernelRoutes.js";
+import executionRoutes from "./executionRoutes.js";
+import deployRoutes from "./deployRoutes.js";
 
 const router = express.Router();
+
+// Deployment static site serving (public site route) and deploy management
+router.use("/:id/deploy", deployRoutes);
 
 router.use(protect);
 
 // Isolated Docker Workspace Container API
 router.use("/:id/container", containerRoutes);
+
+// Abstract Cloud Execution API
+router.use("/:id/execute", executionRoutes);
 
 // Jupyter Notebook Kernel Execution API
 router.use("/:id/kernel", kernelRoutes);

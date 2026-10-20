@@ -2,7 +2,7 @@ import { useEffect, useState } from "react";
 import { useAlert } from "../../hooks/useAlert";
 import { useTheme } from "../../context/ThemeContext";
 import { X } from "lucide-react";
-import API_URL from "../../config/api";
+import API_URL, { getAuthHeaders } from "../../config/api";
 import { type Project } from "../../types/project";
 
 interface EditProjectModalProps {
@@ -47,9 +47,9 @@ function EditProjectModal({
         `${API_URL}/api/projects/${project._id}`,
         {
           method: "PUT",
-          headers: {
+          headers: getAuthHeaders({
             "Content-Type": "application/json",
-          },
+          }),
           credentials: "include",
           body: JSON.stringify({
             name: name.trim(),

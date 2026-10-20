@@ -40,19 +40,36 @@ const isPortListening = (port, host = "127.0.0.1", timeoutMs = 800) => {
  * 3. Spawn embedded persistent MongoDB with WiredTiger storage engine pointing to LOCAL_DB_PATH
  */
 export const connectDB = async () => {
+  // Reuse existing connection in warm serverless environments
+  if (mongoose.connection.readyState >= 1) {
+    return true;
+  }
+
   const mongoUri = process.env.MONGO_URI || process.env.MONGODB_URI;
 
   // 1. Try connecting to configured external URI if provided
   if (mongoUri) {
     try {
       console.log("Connecting to configured MongoDB URI...");
-      await mongoose.connect(mongoUri, { serverSelectionTimeoutMS: 4000 });
+      await mongoose.connect(mongoUri, {
+        dbName: process.env.DB_NAME || "cloudforge",
+        serverSelectionTimeoutMS: 5000,
+      });
       console.log("MongoDB connected successfully to configured URI");
       return true;
     } catch (error) {
       console.warn("Configured MongoDB connection failed:", error.message);
+      if (process.env.VERCEL) {
+        console.error("Serverless MongoDB connection failed. Please ensure MONGO_URI is set in Vercel project environment variables.");
+        return false;
+      }
       console.log("Falling back to local persistent database...");
     }
+  }
+
+  if (process.env.VERCEL) {
+    console.warn("MONGO_URI not configured in Vercel environment.");
+    return false;
   }
 
   const localPort = parseInt(process.env.LOCAL_DB_PORT || String(DEFAULT_PORT), 10);

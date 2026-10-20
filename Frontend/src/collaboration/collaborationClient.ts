@@ -1,4 +1,4 @@
-import API_URL from "../config/api";
+import { getWsUrl } from "../config/api";
 import { type CollabMessage, type ConnectionStatus } from "./types";
 
 type MessageHandler = (msg: CollabMessage) => void;
@@ -33,12 +33,10 @@ export class CollaborationClient {
   }
 
   private _resolveWsUrl(): string {
-    const rawApi = API_URL || "http://localhost:5000";
-    let wsUrl = rawApi.replace(/^http/, "ws");
-    if (wsUrl.endsWith("/")) {
-      wsUrl = wsUrl.slice(0, -1);
-    }
-    return `${wsUrl}/ws/collaboration?projectId=${encodeURIComponent(this.projectId)}`;
+    const baseWs = getWsUrl("/ws/collaboration");
+    const token = typeof window !== "undefined" ? localStorage.getItem("cf_auth_token") : "";
+    const tokenParam = token ? `&token=${encodeURIComponent(token)}` : "";
+    return `${baseWs}?projectId=${encodeURIComponent(this.projectId)}${tokenParam}`;
   }
 
   private _initSocket(): void {

@@ -235,9 +235,76 @@ export const getWorkspace = async (req, res) => {
       return res.status(404).json({ message: "Project not found" });
     }
 
-    const files = await ProjectFile.find({ projectId: project._id }).sort({
+    // Bidirectional synchronization between MongoDB and disk workspace
+    try {
+      await containerService.syncBidirectional(project._id);
+    } catch (e) {
+      console.warn("syncBidirectional error in getWorkspace:", e.message);
+    }
+
+    let files = await ProjectFile.find({ projectId: project._id }).sort({
       path: 1,
     });
+
+    // If project has no files, seed default project starter files so read/write works instantly
+    if (files.length === 0) {
+      const defaultName = (project.name || "cloudforge-app").toLowerCase().replace(/[^a-z0-9]/g, "-");
+      const starterFiles = [
+        {
+          name: "index.js",
+          path: "/index.js",
+          type: "file",
+          language: "javascript",
+          mimeType: "application/javascript",
+          content: `// CloudForge Cloud Container Environment\nconsole.log("CloudForge container runtime active.");\n\nfunction main() {\n  console.log("Hello from /workspace/index.js!");\n}\n\nmain();\n`,
+        },
+        {
+          name: "package.json",
+          path: "/package.json",
+          type: "file",
+          language: "json",
+          mimeType: "application/json",
+          content: JSON.stringify(
+            {
+              name: defaultName,
+              version: "1.0.0",
+              description: project.description || "CloudForge project",
+              main: "index.js",
+              scripts: {
+                start: "node index.js",
+                test: "echo \"Error: no test specified\" && exit 1",
+              },
+            },
+            null,
+            2
+          ),
+        },
+        {
+          name: "README.md",
+          path: "/README.md",
+          type: "file",
+          language: "markdown",
+          mimeType: "text/markdown",
+          content: `# ${project.name || "CloudForge Project"}\n\n${project.description || "Cloud development project on CloudForge."}\n\n## Getting Started\n\nRun your code in the terminal:\n\`\`\`bash\nnode index.js\n\`\`\`\n`,
+        },
+      ];
+
+      for (const item of starterFiles) {
+        await ProjectFile.create({
+          projectId: project._id,
+          name: item.name,
+          path: item.path,
+          type: item.type,
+          language: item.language,
+          mimeType: item.mimeType,
+          content: item.content,
+          size: Buffer.byteLength(item.content, "utf8"),
+        });
+      }
+
+      await containerService.syncFilesToWorkspace(project._id);
+      files = await ProjectFile.find({ projectId: project._id }).sort({ path: 1 });
+    }
 
     const commits = await ProjectCommit.find({
       projectId: project._id,
@@ -358,9 +425,11 @@ export const createProjectFile = async (req, res) => {
     project.updatedAt = new Date();
     await project.save();
 
-    // Asynchronously synchronize new file to disk workspace
+    // Asynchronously synchronize new file or folder to disk workspace
     if (newFile.type === "file") {
       containerService.syncSingleFile(project._id, newFile.path, newFile.content).catch(() => {});
+    } else if (newFile.type === "directory") {
+      containerService.ensureDirectoryInWorkspace(project._id, newFile.path);
     }
 
     // Real-time broadcast to all workspace collaborators
@@ -589,6 +658,9 @@ export const renameProjectFile = async (req, res) => {
     project.updatedAt = new Date();
     await project.save();
 
+    // Synchronize rename on disk workspace
+    containerService.renameInWorkspace(project._id, oldPath, newPath);
+
     const allFiles = await ProjectFile.find({ projectId: project._id }).sort({
       path: 1,
     });
@@ -654,8 +726,10 @@ export const deleteProjectFile = async (req, res) => {
         projectId: project._id,
         path: new RegExp(`^${file.path}(/|$)`),
       });
+      containerService.deleteFromWorkspace(project._id, file.path, true);
     } else {
       await ProjectFile.findByIdAndDelete(file._id);
+      containerService.deleteFromWorkspace(project._id, file.path, false);
     }
 
     project.updatedAt = new Date();

@@ -1,4 +1,4 @@
-import API_URL from "../config/api";
+import API_URL, { getAuthHeaders, getWsUrl } from "../config/api";
 import {
   type ContainerInfo,
   type CommandExecResult,
@@ -10,14 +10,12 @@ class ContainerService {
    * Get WebSocket URL for the interactive container terminal
    */
   getTerminalWsUrl(projectId: string, tabId: string = "tab-1", cols: number = 80, rows: number = 24): string {
-    const wsProtocol = window.location.protocol === "https:" ? "wss:" : "ws:";
-    let host = API_URL.replace(/^https?:\/\//, "");
-    if (!host) {
-      host = window.location.host;
-    }
-    return `${wsProtocol}//${host}/ws/terminal?projectId=${encodeURIComponent(projectId)}&tabId=${encodeURIComponent(
+    const baseWs = getWsUrl("/ws/terminal");
+    const token = typeof window !== "undefined" ? localStorage.getItem("cf_auth_token") : "";
+    const tokenParam = token ? `&token=${encodeURIComponent(token)}` : "";
+    return `${baseWs}?projectId=${encodeURIComponent(projectId)}&tabId=${encodeURIComponent(
       tabId
-    )}&cols=${cols}&rows=${rows}`;
+    )}&cols=${cols}&rows=${rows}${tokenParam}`;
   }
 
   /**
@@ -26,6 +24,7 @@ class ContainerService {
   async getStatus(projectId: string): Promise<ContainerStatusResponse> {
     const res = await fetch(`${API_URL}/api/projects/${projectId}/container/status`, {
       credentials: "include",
+      headers: getAuthHeaders(),
     });
     if (!res.ok) {
       const data = await res.json().catch(() => ({}));
@@ -40,7 +39,7 @@ class ContainerService {
   async startContainer(projectId: string, env: Record<string, string> = {}): Promise<{ container: ContainerInfo; message: string }> {
     const res = await fetch(`${API_URL}/api/projects/${projectId}/container/start`, {
       method: "POST",
-      headers: { "Content-Type": "application/json" },
+      headers: getAuthHeaders({ "Content-Type": "application/json" }),
       credentials: "include",
       body: JSON.stringify({ env }),
     });
@@ -58,6 +57,7 @@ class ContainerService {
     const res = await fetch(`${API_URL}/api/projects/${projectId}/container/stop`, {
       method: "POST",
       credentials: "include",
+      headers: getAuthHeaders(),
     });
     const data = await res.json();
     if (!res.ok) {
@@ -73,6 +73,7 @@ class ContainerService {
     const res = await fetch(`${API_URL}/api/projects/${projectId}/container/restart`, {
       method: "POST",
       credentials: "include",
+      headers: getAuthHeaders(),
     });
     const data = await res.json();
     if (!res.ok) {
@@ -88,6 +89,7 @@ class ContainerService {
     const res = await fetch(`${API_URL}/api/projects/${projectId}/container/rebuild`, {
       method: "POST",
       credentials: "include",
+      headers: getAuthHeaders(),
     });
     const data = await res.json();
     if (!res.ok) {
@@ -103,6 +105,7 @@ class ContainerService {
     const res = await fetch(`${API_URL}/api/projects/${projectId}/container/sync-files`, {
       method: "POST",
       credentials: "include",
+      headers: getAuthHeaders(),
     });
     const data = await res.json();
     if (!res.ok) {
@@ -117,7 +120,7 @@ class ContainerService {
   async execCommand(projectId: string, command: string, env: Record<string, string> = {}): Promise<CommandExecResult> {
     const res = await fetch(`${API_URL}/api/projects/${projectId}/container/exec`, {
       method: "POST",
-      headers: { "Content-Type": "application/json" },
+      headers: getAuthHeaders({ "Content-Type": "application/json" }),
       credentials: "include",
       body: JSON.stringify({ command, env }),
     });

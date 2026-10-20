@@ -1,7 +1,7 @@
 import { useEffect, useState } from "react";
 import { useNavigate } from "react-router-dom";
 
-import API_URL from "../config/api";
+import API_URL, { getAuthHeaders } from "../config/api";
 
 function NotFound() {
   const navigate = useNavigate();
@@ -15,6 +15,7 @@ function NotFound() {
       try {
         const response = await fetch(`${API_URL}/api/auth/me`, {
           credentials: "include",
+          headers: getAuthHeaders(),
         });
 
         setIsAuthenticated(response.ok);

@@ -29,10 +29,20 @@ function Login() {
     });
   };
 
+  const handleFillDemo = () => {
+    setForm({
+      email: "developer@cloudforge.io",
+      password: "Password123!",
+    });
+  };
+
   const handleSubmit = async (e: FormEvent) => {
     e.preventDefault();
 
-    if (!form.email || !form.password) {
+    const normalizedEmail = form.email.trim().toLowerCase();
+    const password = form.password;
+
+    if (!normalizedEmail || !password) {
       showError("Please fill in all fields");
       return;
     }
@@ -46,20 +56,27 @@ function Login() {
           "Content-Type": "application/json",
         },
         credentials: "include",
-        body: JSON.stringify(form),
+        body: JSON.stringify({
+          email: normalizedEmail,
+          password,
+        }),
       });
 
       const data = await res.json();
 
       if (!res.ok) {
-        throw new Error(data.message || "Login failed");
+        throw new Error(data.message || "Invalid email or password");
+      }
+
+      if (data.token) {
+        localStorage.setItem("cf_auth_token", data.token);
       }
 
       showSuccess("Welcome back!");
       navigate("/dashboard");
     } catch (err: unknown) {
       const error = err as Error;
-      showError(error.message);
+      showError(error.message || "Login failed");
     } finally {
       setLoading(false);
     }
@@ -143,6 +160,18 @@ function Login() {
               className="w-full py-3 rounded-xl bg-blue-600 text-white text-sm font-semibold hover:bg-blue-700 disabled:opacity-70 disabled:cursor-not-allowed transition-all shadow-md shadow-blue-500/20 focus:outline-none focus:ring-2 focus:ring-blue-500 cursor-pointer"
             >
               {loading ? "Signing in..." : "Sign In to Workspace"}
+            </button>
+
+            <button
+              type="button"
+              onClick={handleFillDemo}
+              className={`w-full py-2.5 rounded-xl border text-xs sm:text-sm font-medium transition-all cursor-pointer ${
+                isDark
+                  ? "border-neutral-800 bg-neutral-900/60 text-neutral-300 hover:bg-neutral-800 hover:text-white"
+                  : "border-neutral-300 bg-neutral-100/70 text-neutral-700 hover:bg-neutral-200"
+              }`}
+            >
+              ⚡ Quick Fill Demo Account (developer@cloudforge.io)
             </button>
           </form>
 

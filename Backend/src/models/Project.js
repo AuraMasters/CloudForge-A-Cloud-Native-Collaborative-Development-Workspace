@@ -55,6 +55,12 @@ const projectSchema = new mongoose.Schema(
       default: ["main"],
     },
 
+    template: {
+      type: String,
+      default: "node",
+      enum: ["node", "python", "go", "rust", "cpp", "java", "web", "blank"],
+    },
+
     envVariables: {
       type: [envVariableSchema],
       default: [],

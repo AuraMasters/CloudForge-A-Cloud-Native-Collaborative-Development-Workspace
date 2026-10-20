@@ -1,3 +1,5 @@
+import fs from "fs";
+import path from "path";
 import containerService from "../services/containerService.js";
 import Project from "../models/Project.js";
 
@@ -8,6 +10,7 @@ import Project from "../models/Project.js";
  */
 export const executeCode = async (req, res) => {
   const startTime = Date.now();
+  let runnerFilePath = null;
   try {
     const projectId = req.params.id;
     const { code } = req.body;
@@ -34,7 +37,6 @@ _exec_error = None
 _eval_result = None
 
 try:
-    # Try eval for expression vs exec for block
     _compiled = compile(_raw_code, "<jupyter_cell>", "exec")
     exec(_compiled, globals())
 except Exception as e:
@@ -46,7 +48,6 @@ except Exception as e:
 _stdout_str = sys.stdout.getvalue()
 _stderr_str = sys.stderr.getvalue()
 
-# Extract matplotlib figures if available
 _plots = []
 try:
     if 'matplotlib' in sys.modules or 'matplotlib.pyplot' in sys.modules:
@@ -61,7 +62,6 @@ try:
 except:
     pass
 
-# Harvest variables
 _vars = []
 for k, v in list(globals().items()):
     if not k.startswith('_') and k not in ('sys', 'io', 'base64', 'json', 'plt', 'np', 'pd'):
@@ -82,12 +82,14 @@ _response = {
     "error": _exec_error
 }
 
-print("__CF_KERNEL_DELIMITER__" + json.dumps(_response))
+sys.__stdout__.write("__CF_KERNEL_DELIMITER__" + json.dumps(_response) + "\\n")
 `;
 
-    const runnerB64 = Buffer.from(runnerScript).toString("base64");
-    const shellCommand = `python3 -c 'import base64; exec(base64.b64decode("${runnerB64}").decode("utf-8"))' 2>&1 || python -c "import base64; exec(base64.b64decode('${runnerB64}').decode('utf-8'))" 2>&1`;
+    const workspaceDir = containerService.getProjectWorkspaceDir(projectId);
+    runnerFilePath = path.join(workspaceDir, ".cf_kernel_runner.py");
+    fs.writeFileSync(runnerFilePath, runnerScript, "utf8");
 
+    const shellCommand = "python .cf_kernel_runner.py";
     const execResult = await containerService.execCommand(projectId, shellCommand);
     const combinedOutput = (execResult.stdout || "") + (execResult.stderr || "");
 
@@ -162,9 +164,20 @@ print("__CF_KERNEL_DELIMITER__" + json.dumps(_response))
 
     const duration = Date.now() - startTime;
 
+    const stdoutText = outputs
+      .filter((o) => o.output_type === "stream" && o.name === "stdout")
+      .map((o) => o.text)
+      .join("");
+    const stderrText = outputs
+      .filter((o) => o.output_type === "stream" && o.name === "stderr")
+      .map((o) => o.text)
+      .join("");
+
     res.json({
       success: isSuccess,
       outputs,
+      stdout: stdoutText,
+      stderr: stderrText,
       variables,
       executionDurationMs: duration,
     });
@@ -183,6 +196,14 @@ print("__CF_KERNEL_DELIMITER__" + json.dumps(_response))
         },
       ],
     });
+  } finally {
+    if (runnerFilePath && fs.existsSync(runnerFilePath)) {
+      try {
+        fs.unlinkSync(runnerFilePath);
+      } catch {
+        // ignore
+      }
+    }
   }
 };
 

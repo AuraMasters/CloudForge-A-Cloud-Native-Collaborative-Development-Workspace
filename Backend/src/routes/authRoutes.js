@@ -16,8 +16,10 @@ router.post("/login", login);
 router.post("/logout", logout);
 
 router.get("/me", protect, (req, res) => {
+  const token = req.cookies?.token || (req.headers.authorization ? req.headers.authorization.replace("Bearer ", "") : "");
   res.status(200).json({
     user: req.user,
+    token,
   });
 });
 

@@ -1,4 +1,4 @@
-import API_URL from "../config/api";
+import API_URL, { getAuthHeaders } from "../config/api";
 import type {
   GitCommit,
   GitTag,
@@ -10,13 +10,14 @@ import type {
 } from "../types/workspace";
 
 async function vcsRequest<T>(url: string, options: RequestInit = {}): Promise<T> {
+  const customHeaders = (options.headers as Record<string, string>) || {};
   const res = await fetch(url, {
     ...options,
     credentials: "include",
-    headers: {
+    headers: getAuthHeaders({
       "Content-Type": "application/json",
-      ...(options.headers || {}),
-    },
+      ...customHeaders,
+    }),
   });
 
   const data = await res.json();

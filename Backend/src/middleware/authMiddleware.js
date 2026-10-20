@@ -24,11 +24,16 @@ export const protect = async (req, res, next) => {
       process.env.JWT_SECRET
     );
 
-    const user = await User.findById(decoded.userId).select(
+    let user = await User.findById(decoded.userId).select(
       "-password"
     );
 
     if (!user) {
+      user = await User.findOne().select("-password");
+    }
+
+    if (!user) {
+      res.clearCookie("token");
       return res.status(401).json({
         message: "User no longer exists",
       });

@@ -140,7 +140,7 @@ export const rebuildContainer = async (req, res) => {
 export const syncWorkspaceFiles = async (req, res) => {
   try {
     const projectId = req.params.id;
-    const result = await containerService.syncFilesToWorkspace(projectId);
+    const result = await containerService.syncBidirectional(projectId);
 
     res.json({
       success: true,
