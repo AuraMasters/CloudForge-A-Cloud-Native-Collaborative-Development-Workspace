@@ -47,7 +47,7 @@ export const startContainer = async (req, res) => {
       return res.status(404).json({ success: false, message: "Project not found." });
     }
 
-    const result = await containerService.startProjectContainer(projectId, req.body.env || {});
+    const result = await cloudRunnerService.startCloudContainer(projectId, req.body.env || {});
     const containerInfo = await containerService.getProjectContainer(projectId);
     terminalGateway.broadcastContainerStatus(projectId, containerInfo);
 
@@ -70,7 +70,7 @@ export const startContainer = async (req, res) => {
 export const stopContainer = async (req, res) => {
   try {
     const projectId = req.params.id;
-    const result = await containerService.stopProjectContainer(projectId);
+    const result = await cloudRunnerService.stopCloudContainer(projectId);
     const containerInfo = await containerService.getProjectContainer(projectId);
     terminalGateway.broadcastContainerStatus(projectId, containerInfo);
 
@@ -167,9 +167,7 @@ export const executeCommand = async (req, res) => {
       return res.status(400).json({ success: false, message: "command string is required." });
     }
 
-    const result = await containerService.execCommand(projectId, command, {
-      env: req.body.env || {},
-    });
+    const result = await cloudRunnerService.execCloudCommand(projectId, command, req.body.env || {});
 
     res.json({
       success: true,

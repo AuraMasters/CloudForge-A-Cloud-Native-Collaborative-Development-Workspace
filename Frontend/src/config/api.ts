@@ -51,7 +51,15 @@ export const getWsUrl = (path: string): string => {
     return `wss://cloudforge-a-cloud-native-collaborative.onrender.com${cleanPath}`;
   }
 
-  // 4. Local development / same host fallback
+  // 4. Local development: target backend server on port 5000 directly
+  if (isDev) {
+    const backendHost = (envUrl || "http://localhost:5000")
+      .replace(/^https?:\/\//, "")
+      .replace(/\/$/, "");
+    return `ws://${backendHost}${cleanPath}`;
+  }
+
+  // 5. Production same-host fallback
   const isSecure = typeof window !== "undefined" && window.location.protocol === "https:";
   const wsProtocol = isSecure ? "wss:" : "ws:";
   const host = typeof window !== "undefined" && window.location.host ? window.location.host : "localhost:5000";

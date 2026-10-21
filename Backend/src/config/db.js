@@ -49,6 +49,15 @@ export const connectDB = async () => {
 
   // 1. Try connecting to configured external URI if provided
   if (mongoUri) {
+    if (mongoUri.startsWith("mongodb+srv://")) {
+      try {
+        const dns = (await import("dns")).default;
+        dns.setServers(["8.8.8.8", "8.8.4.4", "1.1.1.1"]);
+      } catch {
+        // ignore
+      }
+    }
+
     try {
       console.log("Connecting to configured MongoDB URI...");
       await mongoose.connect(mongoUri, {

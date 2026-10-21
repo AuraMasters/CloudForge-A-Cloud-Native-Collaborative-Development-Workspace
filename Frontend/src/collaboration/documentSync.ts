@@ -95,8 +95,12 @@ export class DocumentSyncManager {
 
     const initBinding = () => {
       if (session.binding) return;
+      const targetModel = editor.getModel() || model;
+      if (!targetModel || typeof targetModel.getValue !== "function" || (typeof targetModel.isDisposed === "function" && targetModel.isDisposed())) {
+        return;
+      }
       try {
-        session.binding = new MonacoBinding(ytext, model, new Set([editor]), awareness);
+        session.binding = new MonacoBinding(ytext, targetModel, new Set([editor]), awareness);
       } catch (err) {
         console.warn("MonacoBinding initialization warning:", err);
       }

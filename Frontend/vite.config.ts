@@ -9,4 +9,16 @@ export default defineConfig({
       'monaco-editor/esm/vs/editor/editor.api.js': 'monaco-editor',
     },
   },
+  server: {
+    proxy: {
+      '/ws': {
+        target: 'ws://localhost:5000',
+        ws: true,
+      },
+      '/api': {
+        target: 'http://localhost:5000',
+        changeOrigin: true,
+      },
+    },
+  },
 })
