@@ -45,10 +45,34 @@ const startServer = async () => {
   // Initialize Collaboration WebSocket Gateway
   collaborationGateway.init();
 
-  server.listen(PORT, () => {
+  server.listen(PORT, async () => {
     console.log(`CloudForge backend running on port ${PORT} [Env: ${process.env.NODE_ENV || "development"}]`);
     console.log(`Terminal WebSocket Gateway listening on ws://localhost:${PORT}/ws/terminal`);
     console.log(`Collaboration WebSocket Gateway listening on ws://localhost:${PORT}/ws/collaboration`);
+
+    // Auto-boot local CloudForge Runner Service if configured on localhost:5050
+    if (process.env.CLOUD_RUNNER_API_URL && process.env.CLOUD_RUNNER_API_URL.includes("5050")) {
+      try {
+        const net = (await import("net")).default;
+        const isRunning = await new Promise((res) => {
+          const s = new net.Socket();
+          s.setTimeout(500);
+          s.once("connect", () => { s.destroy(); res(true); });
+          s.once("timeout", () => { s.destroy(); res(false); });
+          s.once("error", () => { s.destroy(); res(false); });
+          s.connect(5050, "127.0.0.1");
+        });
+
+        if (!isRunning) {
+          await import("./runner/server.js");
+          console.log("Local CloudForge Container Runner Service auto-started on port 5050");
+        } else {
+          console.log("Local CloudForge Container Runner Service connected on port 5050");
+        }
+      } catch (err) {
+        console.warn("Local Cloud Runner startup note:", err.message);
+      }
+    }
   });
 };
 

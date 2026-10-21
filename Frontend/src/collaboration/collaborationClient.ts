@@ -81,7 +81,9 @@ export class CollaborationClient {
       };
 
       this.ws.onerror = (err) => {
-        console.warn("Collaboration WebSocket error:", err);
+        if (!this.isExplicitlyClosed) {
+          console.warn("Collaboration WebSocket error:", err);
+        }
       };
     } catch (err) {
       console.error("Failed to construct collaboration WebSocket:", err);
@@ -168,11 +170,26 @@ export class CollaborationClient {
     clearTimeout(this.reconnectTimer);
     if (this.ws) {
       try {
-        this.ws.close();
+        const socket = this.ws;
+        this.ws = null;
+        socket.onopen = null;
+        socket.onmessage = null;
+        socket.onerror = null;
+        socket.onclose = null;
+        if (socket.readyState === WebSocket.OPEN) {
+          socket.close();
+        } else if (socket.readyState === WebSocket.CONNECTING) {
+          socket.onopen = () => {
+            try {
+              socket.close();
+            } catch {
+              // ignore
+            }
+          };
+        }
       } catch {
         // ignore
       }
-      this.ws = null;
     }
     this._setStatus("offline");
   }

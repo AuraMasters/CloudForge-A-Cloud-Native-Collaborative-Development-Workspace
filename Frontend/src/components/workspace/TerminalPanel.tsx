@@ -65,19 +65,50 @@ export const TerminalPanel: React.FC<TerminalPanelProps> = ({
     return () => clearInterval(interval);
   }, [refreshStatus]);
 
+  // Gracefully clean up terminal instance and WebSocket
+  const cleanupTerminal = useCallback(() => {
+    if (wsRef.current) {
+      const socket = wsRef.current;
+      wsRef.current = null;
+      socket.onopen = null;
+      socket.onmessage = null;
+      socket.onerror = null;
+      socket.onclose = null;
+      try {
+        if (socket.readyState === WebSocket.OPEN) {
+          socket.close();
+        } else if (socket.readyState === WebSocket.CONNECTING) {
+          socket.onopen = () => {
+            try {
+              socket.close();
+            } catch {
+              // ignore
+            }
+          };
+        }
+      } catch {
+        // ignore
+      }
+    }
+    if (termInstanceRef.current) {
+      try {
+        termInstanceRef.current.dispose();
+      } catch {
+        // ignore
+      }
+      termInstanceRef.current = null;
+    }
+    if (terminalRef.current) {
+      terminalRef.current.innerHTML = "";
+    }
+  }, []);
+
   // Connect / Reconnect terminal WebSocket for active tab
   const connectTerminal = useCallback(() => {
     if (!terminalRef.current) return;
 
-    // Clean up previous instance
-    if (wsRef.current) {
-      wsRef.current.close();
-      wsRef.current = null;
-    }
-    if (termInstanceRef.current) {
-      termInstanceRef.current.dispose();
-      termInstanceRef.current = null;
-    }
+    // Clean up previous instance cleanly
+    cleanupTerminal();
 
     // Theme-tailored xterm colors
     const termTheme = isDark
@@ -255,14 +286,9 @@ export const TerminalPanel: React.FC<TerminalPanelProps> = ({
     return () => {
       window.removeEventListener("resize", handleResize);
       resizeObserver.disconnect();
-      if (wsRef.current) {
-        wsRef.current.close();
-      }
-      if (termInstanceRef.current) {
-        termInstanceRef.current.dispose();
-      }
+      cleanupTerminal();
     };
-  }, [connectTerminal]);
+  }, [connectTerminal, cleanupTerminal]);
 
   // Tab operations
   const handleAddTab = () => {

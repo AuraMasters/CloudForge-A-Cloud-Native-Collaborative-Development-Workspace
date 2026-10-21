@@ -184,23 +184,29 @@ class CloudRunnerService {
         })),
       };
 
-      const res = await axios.post(`${provider.endpoint}/v1/workspaces`, payload, {
-        headers: {
-          Authorization: `Bearer ${process.env.CLOUD_RUNNER_API_KEY || ""}`,
-          "Content-Type": "application/json",
-        },
-        timeout: 20000,
-      });
+      try {
+        const res = await axios.post(`${provider.endpoint}/v1/workspaces`, payload, {
+          headers: {
+            Authorization: `Bearer ${process.env.CLOUD_RUNNER_API_KEY || ""}`,
+            "Content-Type": "application/json",
+          },
+          timeout: 20000,
+        });
 
-      return {
-        success: true,
-        mode: "cloud_api",
-        status: "running",
-        cloudContainerId: res.data.containerId || res.data.machineId,
-        previewUrl: res.data.previewUrl,
-        provider: provider.name,
-        message: `Cloud workspace provisioned in ${provider.region}.`,
-      };
+        return {
+          success: true,
+          mode: "cloud_api",
+          status: "running",
+          cloudContainerId: res.data.containerId || res.data.machineId,
+          previewUrl: res.data.previewUrl,
+          provider: provider.name,
+          message: `Cloud workspace provisioned in ${provider.region}.`,
+        };
+      } catch (err) {
+        console.warn(`[CloudRunner] API endpoint unreachable (${err.message}). Falling back to container sandbox.`);
+        const { containerService } = await import("./containerService.js");
+        return await containerService.startProjectContainer(projectId, customEnv);
+      }
     }
 
     // 2. Fly.io Machines API Provider
@@ -264,14 +270,19 @@ class CloudRunnerService {
     const provider = this._determineCloudProvider();
 
     if (provider.id === "cloudforge_api") {
-      await axios.post(
-        `${provider.endpoint}/v1/workspaces/${projectId}/stop`,
-        {},
-        {
-          headers: { Authorization: `Bearer ${process.env.CLOUD_RUNNER_API_KEY || ""}` },
-        }
-      );
-      return { success: true, status: "stopped", message: "Cloud workspace stopped." };
+      try {
+        await axios.post(
+          `${provider.endpoint}/v1/workspaces/${projectId}/stop`,
+          {},
+          {
+            headers: { Authorization: `Bearer ${process.env.CLOUD_RUNNER_API_KEY || ""}` },
+            timeout: 10000,
+          }
+        );
+        return { success: true, status: "stopped", message: "Cloud workspace stopped." };
+      } catch (err) {
+        console.warn(`[CloudRunner] API stop failed (${err.message}). Falling back.`);
+      }
     }
 
     const { containerService } = await import("./containerService.js");
@@ -285,15 +296,19 @@ class CloudRunnerService {
     const provider = this._determineCloudProvider();
 
     if (provider.id === "cloudforge_api") {
-      const res = await axios.post(
-        `${provider.endpoint}/v1/workspaces/${projectId}/exec`,
-        { command, env: envOverrides },
-        {
-          headers: { Authorization: `Bearer ${process.env.CLOUD_RUNNER_API_KEY || ""}` },
-          timeout: 60000,
-        }
-      );
-      return res.data;
+      try {
+        const res = await axios.post(
+          `${provider.endpoint}/v1/workspaces/${projectId}/exec`,
+          { command, env: envOverrides },
+          {
+            headers: { Authorization: `Bearer ${process.env.CLOUD_RUNNER_API_KEY || ""}` },
+            timeout: 60000,
+          }
+        );
+        return res.data;
+      } catch (err) {
+        console.warn(`[CloudRunner] API exec failed (${err.message}). Falling back.`);
+      }
     }
 
     const { containerService } = await import("./containerService.js");
